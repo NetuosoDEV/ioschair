@@ -140,8 +140,15 @@ class GlassPainter(context: Context) {
             backdrop.setLocalMatrix(matrix)
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backdrop != null) {
-            drawShader(canvas, backdrop, w, h, r, alpha)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backdrop != null && !shaderBroken) {
+            try {
+                drawShader(canvas, backdrop, w, h, r, alpha)
+            } catch (t: Throwable) {
+                // Never take the launcher down because of a GPU / shader issue.
+                android.util.Log.w("GlassPainter", "Liquid Glass shader failed, using fallback", t)
+                shaderBroken = true
+                drawCompat(canvas, backdrop, w, h, r, alpha)
+            }
         } else {
             drawCompat(canvas, backdrop, w, h, r, alpha)
         }
@@ -221,6 +228,9 @@ class GlassPainter(context: Context) {
     }
 
     companion object {
+        @Volatile
+        private var shaderBroken = false
+
         /**
          * AGSL Liquid Glass shader. Coordinates are local to the surface (0..uSize).
          * Output is premultiplied.

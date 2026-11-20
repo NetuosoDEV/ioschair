@@ -117,7 +117,13 @@ fun IosChairPreferences(
                 ),
                 label = stringResource(R.string.ios_icon_style),
             )
+            var iconStyleInitial by remember { mutableStateOf(true) }
             LaunchedEffect(iconStyle.state.value) {
+                // Only react to the user changing the style, not to the screen opening.
+                if (iconStyleInitial) {
+                    iconStyleInitial = false
+                    return@LaunchedEffect
+                }
                 val themed = iconStyle.state.value != "default"
                 if (prefs.themedIcons.get() != themed) prefs.themedIcons.set(themed)
                 if (prefs.drawerThemedIcons.get() != themed) prefs.drawerThemedIcons.set(themed)
