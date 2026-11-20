@@ -76,47 +76,40 @@ class FontCache @Inject constructor(
                 .toList()
         }
 
+    // IOSChair: Inter (OFL) is the closest freely-licensed match for Apple's SF Pro.
     val uiRegular = ResourceFont(
         context,
-        R.font.googlesansflex_variable,
-        "Google Sans Flex " + context.getString(R.string.font_weight_medium),
+        R.font.inter_variable,
+        "Inter " + context.getString(R.string.font_weight_medium),
         mapOf(
             FontAxes.WEIGHT to FontWeight.Normal.weight.toFloat(),
-            FontAxes.ROUNDNESS to 100f,
-            FontAxes.GRADE to 100f,
         ),
     )
 
     val uiMedium = ResourceFont(
         context,
-        R.font.googlesansflex_variable,
-        "Google Sans Flex " + context.getString(R.string.font_weight_medium),
+        R.font.inter_variable,
+        "Inter " + context.getString(R.string.font_weight_medium),
         mapOf(
             FontAxes.WEIGHT to FontWeight.Medium.weight.toFloat(),
-            FontAxes.ROUNDNESS to 100f,
-            FontAxes.GRADE to 0f,
         ),
     )
 
     val uiText = ResourceFont(
         context,
-        R.font.googlesansflex_variable,
-        "Google Sans Flex " + context.getString(R.string.font_weight_medium),
+        R.font.inter_variable,
+        "Inter " + context.getString(R.string.font_weight_medium),
         mapOf(
             FontAxes.WEIGHT to FontWeight.Normal.weight.toFloat(),
-            FontAxes.ROUNDNESS to 100f,
-            FontAxes.GRADE to 0f,
         ),
     )
 
     val uiTextMedium = ResourceFont(
         context,
-        R.font.googlesansflex_variable,
-        "Google Sans Flex " + context.getString(R.string.font_weight_medium),
+        R.font.inter_variable,
+        "Inter " + context.getString(R.string.font_weight_medium),
         mapOf(
             FontAxes.WEIGHT to FontWeight.Medium.weight.toFloat(),
-            FontAxes.ROUNDNESS to 100f,
-            FontAxes.GRADE to 100f,
         ),
     )
 

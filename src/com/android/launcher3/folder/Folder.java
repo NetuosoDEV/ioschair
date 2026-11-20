@@ -332,6 +332,16 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         return mBackground;
     }
 
+    @Nullable
+    private app.lawnchair.ioschair.glass.GlassPainter mFolderGlass;
+
+    private void drawFolderGlass(Canvas canvas) {
+        if (mFolderGlass == null) return;
+        Rect b = mBackground.getBounds();
+        mFolderGlass.draw(canvas, this, b.left, b.top, b.right, b.bottom,
+                mBackground.getCornerRadius(), 1f, null);
+    }
+
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
@@ -342,6 +352,13 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         mBackground.setColor(LawnchairUtilsKt.resolveFolderBackgroundColor(getContext()));
         var alpha = LawnchairUtilsKt.getFolderBackgroundAlpha(getContext());
         mBackground.setAlpha(alpha);
+        // IOSChair: Liquid Glass folder panel
+        if (app.lawnchair.ioschair.IosPrefs.folderGlass(getContext())) {
+            mFolderGlass = new app.lawnchair.ioschair.glass.GlassPainter(getContext());
+            mFolderGlass.setTintBoost(0.04f);
+            mBackground.setCornerRadius(app.lawnchair.ioschair.IosPrefs.get(getContext())
+                    .getIosFolderRadius().get() * getResources().getDisplayMetrics().density);
+        }
 
         mContent = findViewById(R.id.folder_content);
         mContent.setPadding(paddingLeftRight, dp.folderContentPaddingTop, paddingLeftRight, 0);
@@ -2027,6 +2044,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             // clipPath is non-null while clip reveal animation is playing
             int count = canvas.save();
             canvas.clipPath(mClipPath.getPath());
+            drawFolderGlass(canvas);
             mBackground.draw(canvas);
             if (!mIsAnimatingClosed) {
                 // If animating open, clip the content to the clip path to keep in bounds.
@@ -2038,6 +2056,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 super.dispatchDraw(canvas);
             }
         } else {
+            drawFolderGlass(canvas);
             mBackground.draw(canvas);
             super.dispatchDraw(canvas);
         }

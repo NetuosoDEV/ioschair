@@ -98,6 +98,11 @@ data object About : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object IosChair : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/ioschair"
+}
+
+@Serializable
 data object ExperimentalFeatures : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/experimental-features"
 }

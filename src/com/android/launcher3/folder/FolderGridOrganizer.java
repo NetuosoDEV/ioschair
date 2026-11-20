@@ -42,8 +42,14 @@ public class FolderGridOrganizer {
     private int mCountX;
     private int mCountY;
     private boolean mDisplayingUpperLeftQuadrant = false;
-    private static final int PREVIEW_MAX_ROWS = 2;
-    private static final int PREVIEW_MAX_COLUMNS = 2;
+    private static int PREVIEW_MAX_ROWS = 2;
+    private static int PREVIEW_MAX_COLUMNS = 2;
+
+    /** IOSChair: size of the preview quadrant (2 for Launcher3, 3 for the iOS grid). */
+    static void setPreviewGridSize(int size) {
+        PREVIEW_MAX_ROWS = size;
+        PREVIEW_MAX_COLUMNS = size;
+    }
 
     /**
      * Note: must call {@link #setFolderInfo(FolderInfo)} manually for verifier to work.

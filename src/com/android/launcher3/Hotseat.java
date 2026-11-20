@@ -149,7 +149,13 @@ public class Hotseat extends FrameLayout implements Insettable {
         }
         int layoutId = hotseatMode.getLayoutResourceId();
 
-        mIconsContainer = new FrameLayout(context);
+        mIconsContainer = new FrameLayout(context) {
+            @Override
+            protected void dispatchDraw(android.graphics.Canvas canvas) {
+                drawDockGlass(this, canvas);
+                super.dispatchDraw(canvas);
+            }
+        };
         mIconsContainer.setLayoutParams(new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         mIconsContainer.setClipChildren(false);
@@ -201,7 +207,61 @@ public class Hotseat extends FrameLayout implements Insettable {
         setClipToPadding(false);
     }
 
+    // IOSChair: Liquid Glass dock
+    @Nullable
+    private app.lawnchair.ioschair.glass.GlassPainter mDockGlass;
+    private final android.graphics.Rect mTmpIconRect = new android.graphics.Rect();
+    private final float[] mTmpCoord = new float[2];
+
+    private void drawDockGlass(FrameLayout container, android.graphics.Canvas canvas) {
+        if (mDockGlass == null || mHasVerticalHotseat) return;
+        float density = getResources().getDisplayMetrics().density;
+        float margin = preferenceManager.getIosDockMargin().get() * density;
+        float pad = preferenceManager.getIosDockPadding().get() * density;
+        float radius = preferenceManager.getIosDockRadius().get() * density;
+        DeviceProfile dp = mActivity.getDeviceProfile();
+
+        float iconTop = Float.NaN;
+        float iconBottom = Float.NaN;
+        CellLayout page = getCurrentPageLayout();
+        if (page != null) {
+            ShortcutAndWidgetContainer icons = page.getShortcutsAndWidgets();
+            for (int i = 0; i < icons.getChildCount(); i++) {
+                View child = icons.getChildAt(i);
+                if (child instanceof BubbleTextView btv && child.getVisibility() == VISIBLE) {
+                    btv.getIconBounds(mTmpIconRect);
+                    mTmpCoord[0] = 0;
+                    mTmpCoord[1] = mTmpIconRect.top;
+                    com.android.launcher3.Utilities.getDescendantCoordRelativeToAncestor(
+                            child, container, mTmpCoord, false, true);
+                    iconTop = mTmpCoord[1];
+                    iconBottom = iconTop + mTmpIconRect.height();
+                    break;
+                }
+            }
+            if (Float.isNaN(iconTop)) {
+                mTmpCoord[0] = 0;
+                mTmpCoord[1] = icons.getHeight() / 2f;
+                com.android.launcher3.Utilities.getDescendantCoordRelativeToAncestor(
+                        icons, container, mTmpCoord, false, true);
+                iconTop = mTmpCoord[1] - dp.iconSizePx / 2f;
+                iconBottom = iconTop + dp.iconSizePx;
+            }
+        }
+        if (Float.isNaN(iconTop)) return;
+
+        float left = margin - container.getLeft();
+        float right = getWidth() - margin - container.getLeft();
+        mDockGlass.draw(canvas, container, left, iconTop - pad, right, iconBottom + pad,
+                radius, 1f, null);
+    }
+
     private void setUpBackground() {
+        if (app.lawnchair.ioschair.IosPrefs.dockGlass(getContext())) {
+            mDockGlass = new app.lawnchair.ioschair.glass.GlassPainter(getContext());
+            mDockGlass.setTintBoost(0.02f);
+            return;
+        }
         if(!preferenceManager.getHotseatBG().get()) return;
 
         var bgColor = PreferenceCacheExtensionsKt.firstCached(preferenceManager2.getHotseatBackgroundColor());

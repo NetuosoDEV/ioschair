@@ -77,6 +77,7 @@ import app.lawnchair.ui.preferences.navigation.BackupAndRestore
 import app.lawnchair.ui.preferences.navigation.DebugMenu
 import app.lawnchair.ui.preferences.navigation.Dock
 import app.lawnchair.ui.preferences.navigation.ExperimentalFeatures
+import app.lawnchair.ui.preferences.navigation.IosChair
 import app.lawnchair.ui.preferences.navigation.Folders
 import app.lawnchair.ui.preferences.navigation.General
 import app.lawnchair.ui.preferences.navigation.Gestures
@@ -130,6 +131,16 @@ fun PreferencesDashboard(
         }
 
         val deckLayout = prefs2.deckLayout.getAdapter()
+        PreferenceGroup {
+            PreferenceCategory(
+                label = stringResource(R.string.ios_settings_label),
+                description = stringResource(R.string.ios_settings_description),
+                iconResource = R.drawable.ic_ios_glass,
+                onNavigate = { onNavigate(IosChair) },
+                isSelected = currentRoute is IosChair,
+            )
+        }
+
         PreferenceGroup {
             PreferenceCategory(
                 label = stringResource(R.string.general_label),

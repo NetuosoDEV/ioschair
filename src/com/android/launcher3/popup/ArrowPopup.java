@@ -288,6 +288,8 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
         }
 
         colorAnimator.setDuration(0).start();
+        // IOSChair: Liquid Glass context menus
+        app.lawnchair.ioschair.glass.GlassUi.glassifyPopup(viewGroup);
         measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED);
     }
 
@@ -387,7 +389,8 @@ public abstract class ArrowPopup<T extends Context & ActivityContext>
      * Returns whether or not we should add the arrow.
      */
     protected boolean shouldAddArrow() {
-        return true;
+        // IOSChair: iOS context menus have no arrow
+        return !app.lawnchair.ioschair.IosPrefs.popupGlass(getContext());
     }
 
     /**

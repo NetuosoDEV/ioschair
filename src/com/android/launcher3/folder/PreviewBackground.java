@@ -32,6 +32,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RadialGradient;
@@ -283,7 +284,38 @@ public class PreviewBackground extends DelegatedCellDrawing {
         return mDotColor;
     }
 
+    // IOSChair: Liquid Glass folder icon
+    private app.lawnchair.ioschair.glass.GlassPainter mGlass;
+    private Boolean mGlassEnabled;
+    private final Path mGlassPath = new Path();
+
+    private boolean drawGlass(Canvas canvas) {
+        if (mGlassEnabled == null) {
+            mGlassEnabled = app.lawnchair.ioschair.IosPrefs.folderGlass(mContext);
+        }
+        if (!mGlassEnabled || !(mInvalidateDelegate instanceof FolderIcon)) return false;
+        if (mGlass == null) {
+            mGlass = new app.lawnchair.ioschair.glass.GlassPainter(mContext);
+            mGlass.setTintBoost(0.08f);
+            mGlass.setRefractionScale(0.45f);
+        }
+        float x = getOffsetX();
+        float y = getOffsetY();
+        float r = getScaledRadius();
+        mGlassPath.reset();
+        getShape().addToPath(mGlassPath, x, y, r);
+        mGlass.draw(canvas, mInvalidateDelegate, x, y, x + 2 * r, y + 2 * r,
+                2 * r * 0.23f, 1f, mGlassPath);
+        return true;
+    }
+
     public void drawBackground(Canvas canvas) {
+        if (drawGlass(canvas)) {
+            mPaint.setStyle(Paint.Style.FILL);
+            mPaint.setColor(getBgColor());
+            getShape().drawShape(canvas, getOffsetX(), getOffsetY(), getScaledRadius(), mPaint);
+            return;
+        }
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setColor(getBgColor());
 

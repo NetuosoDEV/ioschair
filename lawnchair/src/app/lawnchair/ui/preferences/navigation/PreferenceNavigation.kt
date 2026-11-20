@@ -34,6 +34,7 @@ import app.lawnchair.ui.preferences.destinations.DismissedPredictionAppsPreferen
 import app.lawnchair.ui.preferences.destinations.DockPreferences
 import app.lawnchair.ui.preferences.destinations.DummyPreference
 import app.lawnchair.ui.preferences.destinations.ExperimentalFeaturesPreferences
+import app.lawnchair.ui.preferences.destinations.IosChairPreferences
 import app.lawnchair.ui.preferences.destinations.FeatureFlagsPreference
 import app.lawnchair.ui.preferences.destinations.FolderPreferences
 import app.lawnchair.ui.preferences.destinations.FontSelection
@@ -230,6 +231,9 @@ fun PreferenceNavigation(
         composable<ExperimentalFeatures>(
             deepLinks = getDeepLink(ExperimentalFeatures),
         ) { ExperimentalFeaturesPreferences() }
+        composable<IosChair>(
+            deepLinks = getDeepLink(IosChair),
+        ) { IosChairPreferences() }
         composable<Predictions>(
             deepLinks = getDeepLink(Predictions),
         ) { PredictionsPreferences() }

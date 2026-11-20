@@ -4,7 +4,37 @@ import com.android.launcher3.Flags;
 
 public class ClippedFolderIconLayoutRule {
 
-    public static final int MAX_NUM_ITEMS_IN_PREVIEW = 4;
+    // IOSChair: not final, switches to 9 when the iOS 3x3 folder grid is enabled.
+    public static int MAX_NUM_ITEMS_IN_PREVIEW = 4;
+
+    /** IOSChair: iOS style 3x3 mini-grid preview instead of the circular Launcher3 layout. */
+    public static boolean sIosGrid = false;
+    private static final int IOS_GRID = 3;
+
+    /** Enables / disables the iOS 3x3 preview. Must be called before folders are bound. */
+    public static void setIosGrid(boolean enabled) {
+        sIosGrid = enabled;
+        MAX_NUM_ITEMS_IN_PREVIEW = enabled ? IOS_GRID * IOS_GRID : 4;
+        FolderGridOrganizer.setPreviewGridSize(enabled ? IOS_GRID : 2);
+    }
+
+    private float iosCell() {
+        float pad = mAvailableSpace * 0.13f;
+        return (mAvailableSpace - 2 * pad) / IOS_GRID;
+    }
+
+    private float iosIconSize() {
+        return iosCell() * 0.80f;
+    }
+
+    private void iosPosition(int row, int col, float[] result) {
+        float pad = mAvailableSpace * 0.13f;
+        float cell = iosCell();
+        float icon = iosIconSize();
+        if (mIsRtl) col = IOS_GRID - 1 - col;
+        result[0] = pad + col * cell + (cell - icon) / 2f;
+        result[1] = pad + row * cell + (cell - icon) / 2f;
+    }
     private static final int MIN_NUM_ITEMS_IN_PREVIEW = 2;
 
     public static final float MIN_SCALE = 0.44f;
@@ -60,11 +90,11 @@ public class ClippedFolderIconLayoutRule {
         if (index == EXIT_INDEX) {
             // 0 1 * <-- Exit position (row 0, col 2)
             // 2 3
-            getGridPosition(0, 2, mTmpPoint);
+            getGridPosition(0, sIosGrid ? IOS_GRID : 2, mTmpPoint);
         } else if (index == ENTER_INDEX) {
             // 0 1
             // 2 3 * <-- Enter position (row 1, col 2)
-            getGridPosition(1, 2, mTmpPoint);
+            getGridPosition(sIosGrid ? IOS_GRID - 1 : 1, sIosGrid ? IOS_GRID : 2, mTmpPoint);
         } else if (index >= MAX_NUM_ITEMS_IN_PREVIEW) {
             // Items beyond those displayed in the preview are animated to the center
             mTmpPoint[0] = mTmpPoint[1] = mAvailableSpace / 2 - (mIconSize * totalScale) / 2;
@@ -123,6 +153,10 @@ public class ClippedFolderIconLayoutRule {
      * 2 3  // 3 is row 1, col 1`
      */
     private void getGridPosition(int row, int col, float[] result) {
+        if (sIosGrid) {
+            iosPosition(row, col, result);
+            return;
+        }
         // We use position 0 and 3 to calculate the x and y distances between items.
         getPosition(0, 4, result);
         float left = result[0];
@@ -137,6 +171,10 @@ public class ClippedFolderIconLayoutRule {
     }
 
     private void getPosition(int index, int curNumItems, float[] result) {
+        if (sIosGrid) {
+            iosPosition(index / IOS_GRID, index % IOS_GRID, result);
+            return;
+        }
         // The case of two items is homomorphic to the case of one.
         curNumItems = Math.max(curNumItems, 2);
 
@@ -195,6 +233,9 @@ public class ClippedFolderIconLayoutRule {
      * @return scale for icons in Folder
      */
     public float scaleForItem(int numItems, int page) {
+        if (sIosGrid) {
+            return iosIconSize() / mIconSize;
+        }
         float scale;
         if (page > 0) {
             scale = MIN_SCALE;

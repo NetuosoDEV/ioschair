@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IOSChair app icon foreground: a glass tile holding a chair glyph. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- glass tile -->
+    <path android:pathData="M40,30h28a10,10 0,0 1,10 10v28a10,10 0,0 1,-10 10h-28a10,10 0,0 1,-10 -10v-28a10,10 0,0 1,10 -10z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="30" android:startY="30"
+                android:endX="78" android:endY="78">
+                <item android:offset="0" android:color="#66FFFFFF" />
+                <item android:offset="1" android:color="#22FFFFFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:strokeWidth="1.2"
+        android:strokeColor="#CCFFFFFF"
+        android:fillColor="#00000000"
+        android:pathData="M40,30.6h28a9.4,9.4 0,0 1,9.4 9.4v28a9.4,9.4 0,0 1,-9.4 9.4h-28a9.4,9.4 0,0 1,-9.4 -9.4v-28a9.4,9.4 0,0 1,9.4 -9.4z" />
+    <!-- chair glyph -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M46,38h3v14h12v-14h3v17h-1.5v14h-3v-11h-9v11h-3v-14h-1.5z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M44.5,55h19v3h-19z" />
+</vector>

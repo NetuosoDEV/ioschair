@@ -130,7 +130,7 @@ class PreferenceManager @Inject constructor(
     val overrideWindowCornerRadius = BoolPref("pref_overrideWindowCornerRadius", false, recreate)
     val windowCornerRadius = IntPref("pref_windowCornerRadius", 80, recreate)
     val autoLaunchRoot = BoolPref("pref_autoLaunchRoot", false)
-    val wallpaperScrolling = BoolPref("pref_wallpaperScrolling", true)
+    val wallpaperScrolling = BoolPref("pref_wallpaperScrolling", false)
     val infiniteScrolling = BoolPref("pref_infiniteScrolling", false)
     val enableDebugMenu = BoolPref("pref_enableDebugMenu", false)
     val vibrationFeedbackLevel: IntPref = IntPref(
@@ -212,6 +212,60 @@ class PreferenceManager @Inject constructor(
     )
 
     val forceIconMonochrome = BoolPref("pref_forceIconMonochrome", false)
+
+    // ------------------------------------------------------------------
+    // IOSChair: iOS 26 / Liquid Glass customisation
+    // ------------------------------------------------------------------
+    private val glassRebuild: () -> Unit = {
+        app.lawnchair.ioschair.glass.GlassBackdrop.refresh(context)
+    }
+    private val glassInvalidate: () -> Unit = {
+        app.lawnchair.ioschair.glass.GlassBackdrop.postInvalidateHosts()
+    }
+
+    /** Master switch for every Liquid Glass surface. */
+    val iosGlassEnabled = BoolPref("ios_glass_enabled", true, recreate)
+
+    /** 0..100, amount of frosting (down-sample + blur kernel). */
+    val iosGlassBlur = IntPref("ios_glass_blur", 42, glassRebuild)
+
+    /** auto | light | dark | clear */
+    val iosGlassTintMode = StringPref("ios_glass_tint_mode", "auto", glassInvalidate)
+    val iosGlassTintOpacity = FloatPref("ios_glass_tint_opacity", 0.16f, glassInvalidate)
+    val iosGlassRefraction = FloatPref("ios_glass_refraction", 0.6f, glassInvalidate)
+    val iosGlassHighlight = FloatPref("ios_glass_highlight", 0.7f, glassInvalidate)
+    val iosGlassDispersion = FloatPref("ios_glass_dispersion", 0.35f, glassInvalidate)
+    val iosGlassSaturation = FloatPref("ios_glass_saturation", 1.4f, glassInvalidate)
+
+    /** Glints follow device tilt, like iOS 26. */
+    val iosGlassMotion = BoolPref("ios_glass_motion", true, recreate)
+
+    val iosDockGlass = BoolPref("ios_dock_glass", true, recreate)
+    val iosDockRadius = FloatPref("ios_dock_radius", 34f, recreate)
+    val iosDockMargin = FloatPref("ios_dock_margin", 10f, recreate)
+    val iosDockPadding = FloatPref("ios_dock_padding", 12f, recreate)
+
+    /** iOS 26 "Search" pill shown above the dock instead of page dots. */
+    val iosSearchPill = BoolPref("ios_search_pill", true, recreate)
+
+    val iosFolderGlass = BoolPref("ios_folder_glass", true, recreate)
+    val iosFolderGrid = BoolPref("ios_folder_grid", true, recreate)
+    val iosFolderRadius = FloatPref("ios_folder_radius", 38f, recreate)
+
+    val iosPopupGlass = BoolPref("ios_popup_glass", true, recreate)
+    val iosDrawerGlass = BoolPref("ios_drawer_glass", true, recreate)
+
+    /**
+     * iOS 26 icon appearance applied to themed (monochrome) icons:
+     * default | clear | dark | tinted. Requires themed icons to be enabled.
+     */
+    val iosIconStyle = StringPref("ios_icon_style", "default", reloadIcons)
+
+    /** Icons wiggle while the home screen is being edited. */
+    val iosJiggle = BoolPref("ios_jiggle", true)
+
+    /** Shows the IOSChair welcome / permission card once. */
+    val iosOnboardingDone = BoolPref("ios_onboarding_done", false)
 
     override fun close() {
         TODO("Not yet implemented")

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IOSChair strings -->
+<resources>
+    <string name="ios_search_pill">Search</string>
+    <string name="ios_settings_label">IOSChair · Liquid Glass</string>
+    <string name="ios_settings_description">iOS 26 look, glass material, dock, folders</string>
+    <string name="ios_group_glass">Liquid Glass material</string>
+    <string name="ios_group_surfaces">Glass surfaces</string>
+    <string name="ios_group_dock">Dock</string>
+    <string name="ios_group_folders">Folders</string>
+    <string name="ios_group_home">Home Screen</string>
+    <string name="ios_glass_enabled">Liquid Glass</string>
+    <string name="ios_glass_enabled_desc">Translucent glass that bends and reflects the wallpaper</string>
+    <string name="ios_glass_blur">Frosting</string>
+    <string name="ios_glass_tint_mode">Appearance</string>
+    <string name="ios_glass_tint_auto">Automatic</string>
+    <string name="ios_glass_tint_light">Light</string>
+    <string name="ios_glass_tint_dark">Dark</string>
+    <string name="ios_glass_tint_clear">Clear</string>
+    <string name="ios_glass_tint_opacity">Tint</string>
+    <string name="ios_glass_refraction">Lensing (refraction)</string>
+    <string name="ios_glass_highlight">Specular highlights</string>
+    <string name="ios_glass_dispersion">Chromatic dispersion</string>
+    <string name="ios_glass_saturation">Vibrancy</string>
+    <string name="ios_glass_motion">Glints follow device tilt</string>
+    <string name="ios_wallpaper_access">Allow wallpaper access</string>
+    <string name="ios_wallpaper_access_desc">Needed for real frosted glass. Without it the glass is tinted from wallpaper colours only.</string>
+    <string name="ios_wallpaper_access_granted">Wallpaper access granted — glass samples your wallpaper</string>
+    <string name="ios_dock_glass">Glass dock</string>
+    <string name="ios_dock_radius">Corner radius</string>
+    <string name="ios_dock_margin">Side margin</string>
+    <string name="ios_dock_padding">Vertical padding</string>
+    <string name="ios_search_pill_label">Search pill above the dock</string>
+    <string name="ios_search_pill_desc">Tap to search; turns into page dots while swiping</string>
+    <string name="ios_folder_glass">Glass folders</string>
+    <string name="ios_folder_grid">iOS 3×3 folder preview</string>
+    <string name="ios_folder_radius">Open folder corner radius</string>
+    <string name="ios_popup_glass">Glass context menus</string>
+    <string name="ios_drawer_glass">Frosted App Library background</string>
+    <string name="ios_jiggle">Jiggle icons while editing</string>
+    <string name="ios_preset_apply">Apply iOS 26 layout preset</string>
+    <string name="ios_preset_apply_desc">4×6 grid, 4-icon dock, iOS icon shape, labels and font</string>
+    <string name="ios_icon_pack_hint">Get an iOS icon pack</string>
+    <string name="ios_icon_pack_hint_desc">IOSChair does not ship Apple artwork. Install any iOS-style icon pack and pick it in Home Screen → Icon style.</string>
+    <string name="ios_icon_style">Icon style</string>
+    <string name="ios_icon_style_default">Default</string>
+    <string name="ios_icon_style_dark">Dark</string>
+    <string name="ios_icon_style_clear">Clear (Liquid Glass)</string>
+    <string name="ios_icon_style_tinted">Tinted</string>
+</resources>

@@ -181,6 +181,120 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
         mIsRtl = Utilities.isRtl(getResources());
     }
 
+    // ------------------------------------------------------------------
+    // IOSChair: iOS 26 "Search" pill which morphs into page dots while swiping
+    // ------------------------------------------------------------------
+    private boolean mIosPill;
+    private app.lawnchair.ioschair.glass.GlassPainter mPillGlass;
+    private Paint mPillTextPaint;
+    private android.graphics.drawable.Drawable mPillIcon;
+    private String mPillLabel;
+    private final RectF mPillRect = new RectF();
+    private boolean mPillPressed;
+
+    @Override
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        if (getId() == R.id.page_indicator
+                && app.lawnchair.ioschair.IosPrefs.searchPill(getContext())) {
+            mIosPill = true;
+            mShouldAutoHide = true;
+            mPillGlass = new app.lawnchair.ioschair.glass.GlassPainter(getContext());
+            mPillTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPillTextPaint.setTextSize(15 * getResources().getDisplayMetrics().scaledDensity);
+            mPillTextPaint.setTypeface(android.graphics.Typeface.create(
+                    "sans-serif-medium", android.graphics.Typeface.NORMAL));
+            mPillLabel = getResources().getString(R.string.ios_search_pill);
+            mPillIcon = getContext().getDrawable(R.drawable.ic_ios_search);
+            setContentDescription(mPillLabel);
+        }
+    }
+
+    private void drawIosPill(Canvas canvas) {
+        float density = getResources().getDisplayMetrics().density;
+        boolean scrolling = mNumPages > 1 && mTotalScroll != 0;
+        float dotsFrac = scrolling ? mPaginationPaint.getAlpha() / 255f : 0f;
+
+        int fg = mPaginationPaint.getColor() | 0xFF000000;
+        float textW = mPillTextPaint.measureText(mPillLabel);
+        float iconSize = 15 * density;
+        float searchW = 14 * density + iconSize + 6 * density + textW + 16 * density;
+        float dotStep = 15 * density;
+        float dotsW = Math.max(1, mNumPages) * dotStep + 16 * density;
+        float w = searchW + (dotsW - searchW) * dotsFrac;
+        float h = Math.min(getHeight() - 2 * density, 34 * density);
+        float cx = getWidth() / 2f;
+        float cy = getHeight() / 2f;
+        mPillRect.set(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f);
+        if (mPillPressed) {
+            float s = 0.94f;
+            canvas.save();
+            canvas.scale(s, s, cx, cy);
+        }
+        mPillGlass.draw(canvas, this, mPillRect.left, mPillRect.top, mPillRect.right,
+                mPillRect.bottom, h / 2f, 1f, null);
+
+        // "Search" label
+        int labelAlpha = (int) (255 * (1f - dotsFrac));
+        if (labelAlpha > 0) {
+            float startX = cx - (iconSize + 6 * density + textW) / 2f;
+            mPillIcon.setTint(fg);
+            mPillIcon.setAlpha(labelAlpha);
+            mPillIcon.setBounds((int) startX, (int) (cy - iconSize / 2f),
+                    (int) (startX + iconSize), (int) (cy + iconSize / 2f));
+            mPillIcon.draw(canvas);
+            mPillTextPaint.setColor(fg);
+            mPillTextPaint.setAlpha(labelAlpha);
+            Paint.FontMetrics fm = mPillTextPaint.getFontMetrics();
+            canvas.drawText(mPillLabel, startX + iconSize + 6 * density,
+                    cy - (fm.ascent + fm.descent) / 2f, mPillTextPaint);
+        }
+
+        // Page dots
+        if (dotsFrac > 0f) {
+            float firstX = cx - (mNumPages - 1) * dotStep / 2f;
+            int active = Math.round(mCurrentPosition);
+            if (mIsRtl) active = mNumPages - 1 - active;
+            float r = 3.5f * density;
+            int saved = mPaginationPaint.getAlpha();
+            for (int i = 0; i < mNumPages; i++) {
+                mPaginationPaint.setAlpha((int) (dotsFrac * (i == active ? 255 : 110)));
+                canvas.drawCircle(firstX + i * dotStep, cy, r, mPaginationPaint);
+            }
+            mPaginationPaint.setAlpha(saved);
+        }
+        if (mPillPressed) {
+            canvas.restore();
+        }
+    }
+
+    @Override
+    public boolean onTouchEvent(android.view.MotionEvent ev) {
+        if (!mIosPill) return super.onTouchEvent(ev);
+        switch (ev.getActionMasked()) {
+            case android.view.MotionEvent.ACTION_DOWN:
+                if (!mPillRect.contains(ev.getX(), ev.getY())) return false;
+                mPillPressed = true;
+                invalidate();
+                return true;
+            case android.view.MotionEvent.ACTION_UP:
+                boolean inside = mPillRect.contains(ev.getX(), ev.getY());
+                mPillPressed = false;
+                invalidate();
+                if (inside) {
+                    performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);
+                    app.lawnchair.ioschair.IosActions.openSearch(getContext());
+                }
+                return true;
+            case android.view.MotionEvent.ACTION_CANCEL:
+                mPillPressed = false;
+                invalidate();
+                return true;
+            default:
+                return mPillPressed;
+        }
+    }
+
     @Override
     public void setScroll(int currentScroll, int totalScroll) {
         if (currentScroll == 0 && totalScroll == 0) {
@@ -265,7 +379,7 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
 
     @Override
     public void setShouldAutoHide(boolean shouldAutoHide) {
-        mShouldAutoHide = shouldAutoHide;
+        mShouldAutoHide = shouldAutoHide || mIosPill;
         if (shouldAutoHide && mPaginationPaint.getAlpha() > INVISIBLE_ALPHA) {
             hideAfterDelay();
         } else if (!shouldAutoHide) {
@@ -485,6 +599,10 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
 
     @Override
     protected void onDraw(Canvas canvas) {
+        if (mIosPill) {
+            drawIosPill(canvas);
+            return;
+        }
         if (mNumPages < 2) {
             return;
         }

@@ -159,6 +159,11 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         layoutInflater.factory2 = LawnchairLayoutFactory(this)
+        // IOSChair: must be configured before folders are inflated/bound.
+        com.android.launcher3.folder.ClippedFolderIconLayoutRule.setIosGrid(
+            app.lawnchair.ioschair.IosPrefs.folderGrid(this),
+        )
+        app.lawnchair.ioschair.glass.GlassBackdrop.init(this)
         super.onCreate(savedInstanceState)
 
         prefs.launcherTheme.subscribeChanges(this, ::updateTheme)
@@ -472,6 +477,14 @@ class LawnchairLauncher : QuickstepLauncher() {
     override fun onResume() {
         super.onResume()
         restartIfPending()
+        // IOSChair: tilt-reactive glass highlights + refresh backdrop if permission changed.
+        if (app.lawnchair.ioschair.IosPrefs.glass(this)) {
+            if (app.lawnchair.ioschair.IosPrefs.get(this).iosGlassMotion.get()) {
+                app.lawnchair.ioschair.glass.GlassMotion.start(this)
+            }
+            app.lawnchair.ioschair.glass.GlassBackdrop.refreshIfAccessChanged(this)
+        }
+        app.lawnchair.ioschair.IosJiggle.attach(this)
         refreshPredictionContainersFromModel()
 
         dragLayer.viewTreeObserver.addOnDrawListener(
@@ -492,6 +505,11 @@ class LawnchairLauncher : QuickstepLauncher() {
                 }
             },
         )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        app.lawnchair.ioschair.glass.GlassMotion.stop()
     }
 
     override fun onStateSetEnd(state: LauncherState) {

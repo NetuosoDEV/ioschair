@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IOSChair: rounded magnifier glyph used by the home screen Search pill. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10.25,3.5a6.75,6.75 0,0 1,5.36 10.85l4.52,4.52a1,1 0,0 1,-1.41 1.41l-4.52,-4.52A6.75,6.75 0,1 1,10.25 3.5zM10.25,5.5a4.75,4.75 0,1 0,0 9.5a4.75,4.75 0,0 0,0 -9.5z" />
+</vector>

@@ -1,112 +1,61 @@
-# Lawnchair 16
+# IOSChair
 
-[![Build debug APK](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/ci.yml/badge.svg)](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/ci.yml)
-[![Build release APK](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/release_update.yml/badge.svg)](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/release_update.yml)
-[![Crowdin](https://badges.crowdin.net/e/188ba69d884418987f0b7f1dd55e3a4e/localized.svg)](https://lawnchair.crowdin.com/lawnchair)
-[![OpenCollective](https://img.shields.io/opencollective/all/lawnchair?label=financial%20contributors&logo=open-collective)](https://opencollective.com/lawnchair)
-[![Telegram](https://img.shields.io/endpoint?url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Flccommunity)](https://t.me/lccommunity)
-[![Discord](https://img.shields.io/discord/803299970169700402?label=server&logo=discord)](https://discord.gg/3x8qNWxgGZ)
-[![GitHub Downloads](https://img.shields.io/github/downloads/LawnchairLauncher/lawnchair/total.svg?label=GitHub%20Downloads&logo=github)](https://github.com/LawnchairLauncher/lawnchair/releases)
-[![Play Store Installs](https://img.shields.io/endpoint?color=green&logo=googleplay&logoColor=green&url=https%3A%2F%2Fplay.cuzi.workers.dev%2Fplay%3Fi%3Dapp.lawnchair.play%26l%3DPlay%2520Store%2520Installs%26m%3D%24shortinstalls)](https://play.google.com/store/apps/details?id=app.lawnchair.play)
+**IOSChair** is a fork of [Lawnchair 16](https://github.com/LawnchairLauncher/lawnchair) that turns it
+into an iOS 26–style home screen with Apple's **Liquid Glass** look, while keeping every Lawnchair
+setting available for fine tuning.
 
-<picture>
-    <!-- Avoid image being clickable with slight workaround -->
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/device-frame-dark.webp" width="250px">
-    <img alt="Smartphone home screen shown in day and night themes, featuring Android Material You dynamic color styling across the wallpaper, clock widget, and app icons." src="docs/assets/device-frame-light.webp" width="250px">
-</picture>
+> IOSChair is an independent open-source project. It is not affiliated with or endorsed by Apple.
+> It ships no Apple artwork, icons or fonts — use any iOS-style icon pack from the Play Store.
 
-Lawnchair is a free, open-source home app for Android. Taking Launcher3—Android’s default home app—as a starting point, it ports Pixel Launcher features and introduces rich customization options.
+## What changes compared to Lawnchair
 
-This branch houses the codebase of Lawnchair 16, which is currently in development and is based on Launcher3 from Android 16. For Lawnchair 9 to 15, see the branches with the `9-` to `15-` prefixes, respectively.
+| Area | iOS 26 behaviour reproduced |
+| --- | --- |
+| **Liquid Glass material** | Real-time AGSL shader (Android 13+): blurred wallpaper backdrop, edge **lensing/refraction**, chromatic dispersion, vibrancy boost, adaptive light/dark tint and a **specular rim**. Android 8–12 get a composited fallback. |
+| **Motion glints** | The light source follows device tilt (gravity sensor), so highlights slide along glass edges like on iPhone. Only active while the home screen is visible. |
+| **Dock** | Floating glass dock with rounded corners, 4 icons, no labels, no search bar under it. Radius / margins / padding are adjustable. |
+| **Search pill** | The glass **“Search”** pill above the dock opens app search; while you swipe pages it morphs into page dots. |
+| **Folders** | Glass folder icons with an iOS **3×3 mini-grid** preview; the opened folder is a large glass panel that morphs out of the icon. |
+| **Context menus** | Long-press menus are glass cards without the Material arrow. |
+| **App Library** | The app drawer sits on a frosted copy of your wallpaper. |
+| **Jiggle mode** | Icons and widgets wobble while you drag / edit the home screen. |
+| **Icons** | Continuous-corner “Cupertino” mask by default, bigger icons, iOS style icon appearances: **Default / Dark / Clear (glass) / Tinted**. Red notification badges with counts. |
+| **Typography** | [Inter](https://rsms.me/inter/) (SIL OFL) bundled as the closest free match for SF Pro. |
+| **Layout** | 4×6 grid, 4-icon dock, static wallpaper, no At-a-Glance widget, one-tap *“Apply iOS 26 layout preset”*. |
 
-## Features
+All of it lives in **Settings → IOSChair · Liquid Glass**: frosting, tint, appearance
+(Auto / Light / Dark / Clear), refraction, highlights, dispersion, vibrancy, tilt glints, per-surface
+toggles, dock geometry, folder style and more.
 
-- Material 3 Expressive theming that follows your wallpaper and system colors.
-- At a Glance widget support, with integration for [Smartspacer](https://github.com/KieronQuinn/Smartspacer).
-- QuickSwitch support for Android Recents integration on Android 15-16 (root required).
-- Global search for apps, contacts, and web results from the home screen.
-- Customization options for icon packs, fonts, and color settings.
+### Real frosted glass needs wallpaper access
 
-## Download
+Android does not let third-party launchers blur what is behind them, so IOSChair renders the glass
+from a blurred copy of your wallpaper. Grant wallpaper access from the IOSChair settings page
+(button *“Allow wallpaper access”*). Without it the glass is tinted from the wallpaper’s colours only.
 
-<p align="left">
-  <a href="https://play.google.com/store/apps/details?id=app.lawnchair.play">
-    <picture>
-      <!-- Avoid image being clickable with slight workaround -->
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-google-play.webp" height="60">
-      <img alt="Get it on Google Play" src="docs/assets/badge-google-play.webp" height="60">
-    </picture>
-  </a>
-  <a href="https://apt.izzysoft.de/fdroid/index/apk/app.lawnchair">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-izzyondroid.webp" height="60">
-      <img alt="Get it on IzzyOnDroid" src="docs/assets/badge-izzyondroid.webp" height="60">
-    </picture>
-  </a>
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/LawnchairLauncher/lawnchair/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-obtainium.webp" height="60">
-      <img alt="Get it on Obtainium" src="docs/assets/badge-obtainium.webp" height="60">
-    </picture>
-  </a>
-    <a href="https://github.com/LawnchairLauncher/lawnchair/releases">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-github.webp" height="60">
-      <img alt="Get it on GitHub" src="docs/assets/badge-github.webp" height="60">
-    </picture>
-  </a>
-</p>
+## Building
 
-Lawnchair on Play Store will install as a different app compared to other sources. Features may be restricted to comply with Google Play’s publishing rules.
+Requirements: JDK 21, Android SDK platform 37 (`platforms;android-37.2`) and build-tools 37.0.0.
 
-You can also [verify your installation](https://docs.lawnchair.app/getting-started/install-and-setup/verify) to check if you have installed an official build.
+```bash
+git clone --recursive https://github.com/NetuosoDEV/ioschair.git
+cd ioschair
+echo "sdk.dir=/path/to/Android/Sdk" > local.properties
+./gradlew assembleLawnWithQuickstepGithubDebug
+```
 
-### Development builds
+The APK ends up in `build/outputs/apk/lawnWithQuickstepGithub/debug/`. The package name is
+`app.ioschair(.debug)`, so it installs next to Lawnchair.
 
-Interested in keeping yourself up-to-date with every Lawnchair development? Try our development builds!
+Code map of the fork:
 
-These builds offer the latest features and bug fixes at a cost of performance and additional issues. Make backups before installing.
+- `lawnchair/src/app/lawnchair/ioschair/glass/` — Liquid Glass engine (`GlassBackdrop`, `GlassPainter` + AGSL shader, `GlassMotion`, `GlassDrawable`, `GlassUi`).
+- `lawnchair/src/app/lawnchair/ioschair/` — preferences facade, jiggle mode, actions.
+- `lawnchair/src/app/lawnchair/ui/preferences/destinations/IosChairPreferences.kt` — settings screen.
+- Hooks in Launcher3: `Hotseat`, `PageIndicatorDots`, `folder/Folder`, `folder/PreviewBackground`, `folder/ClippedFolderIconLayoutRule`, `popup/ArrowPopup`, `LawnchairScrimView`.
 
-Download: [Obtainium][Obtainium link] • [GitHub][GitHub link] • [nightly.link][Nightly link]
+## Credits & licence
 
-## Sponsors
-
-<p align="left">
-  <a href="https://coderabbit.link/lawnchair">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsor-coderabbit-dark.svg" width="300">
-      <img alt="CodeRabbit" src="docs/assets/sponsor-coderabbit-light.svg" width="300">
-    </picture>
-  </a>
-</p>
-
-[CodeRabbit](https://coderabbit.link/lawnchair) is an AI-powered code review platform that integrates directly into pull-request workflows and IDEs, examining code changes in context and suggesting improvements.
-
-## Support Lawnchair
-
-If you love what we do, consider [supporting us on Open Collective](https://opencollective.com/lawnchair)! Your contributions help keep Lawnchair independent and enable us to develop faster.
-
-A huge thank you to our Core Backers ($5+):
-*(These backers directly fund our Project Velocity Fund)*
-
-[![Core Backers](https://opencollective.com/lawnchair/tiers/backer.svg?avatarHeight=64&width=890&button=false)](https://opencollective.com/lawnchair)
-
-[Become a supporter](https://opencollective.com/lawnchair) to help us cover our operational costs, or become a Core Backer to be featured here!
-
-## Contribute
-
-Visit the [Lawnchair contributing guidelines](CONTRIBUTING.md) for information and tips on contributing to Lawnchair.
-
-## Quick links
-
-- [Website](https://lawnchair.app)
-- [Documentation](https://docs.lawnchair.app/)
-- [News on Telegram](https://t.me/lawnchairci)
-- [Discord](https://discord.com/invite/3x8qNWxgGZ)
-- [X (formerly Twitter)](https://x.com/lawnchairapp)
-- [_XDA_ thread](https://xdaforums.com/t/lawnchair-customizable-pixel-launcher.3627137/)
-
-<!-- Download links -->
-[Nightly link]: https://nightly.link/LawnchairLauncher/lawnchair/workflows/ci/16-dev
-[Obtainium link]: https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22app.lawnchair.nightly%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Flawnchairlauncher%2Flawnchair%22%2C%22author%22%3A%22Lawnchair%20Launcher%22%2C%22name%22%3A%22Lawnchair%20(Debug)%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Afalse%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22Lawnchair%20Nightly%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22dontSortReleasesList%5C%22%3Afalse%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Afalse%2C%5C%22releaseDateAsVersion%5C%22%3Atrue%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22Lawnchair%20is%20a%20free%2C%20open-source%20home%20app%20for%20Android.%20(NOTE%3A%20This%20is%20the%20debug%20version%20of%20Lawnchair%2C%20for%20the%20beta%2Fstable%20versions%20see%20%5C%5C%5C%22Lawnchair%5C%5C%5C%22)%5C%22%7D%22%7D
-[GitHub link]: https://github.com/LawnchairLauncher/lawnchair/releases/tag/nightly
+Based on Lawnchair (GPL-3.0) and AOSP Launcher3 (Apache-2.0); see [`docs/LAWNCHAIR_README.md`](docs/LAWNCHAIR_README.md)
+and `LICENSE.txt`. Inter font © The Inter Project Authors, SIL Open Font License 1.1
+([`docs/licenses/Inter-OFL.txt`](docs/licenses/Inter-OFL.txt)).
