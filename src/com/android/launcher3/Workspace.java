@@ -422,7 +422,9 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         } else {
             lp.leftMargin = lp.rightMargin = 0;
             lp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM;
-            lp.bottomMargin = grid.hotseatBarSizePx - grid.workspaceCellPaddingXPx;
+            lp.bottomMargin = grid.hotseatBarSizePx - grid.workspaceCellPaddingXPx
+                    + com.android.launcher3.pageindicators.PageIndicatorDots
+                            .getIosPillLift(getContext());
         }
         mPageIndicator.setLayoutParams(lp);
     }

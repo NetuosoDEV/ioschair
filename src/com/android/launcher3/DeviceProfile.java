@@ -419,6 +419,9 @@ public class DeviceProfile {
                 R.dimen.workspace_page_indicator_height);
         workspacePageIndicatorHeight *= PreferenceCacheExtensionsKt
                 .firstCached(preferenceManager2.getPageIndicatorHeightFactor());
+        // IOSChair: reserve room so the Search pill sits above the glass dock.
+        workspacePageIndicatorHeight +=
+                com.android.launcher3.pageindicators.PageIndicatorDots.getIosPillLift(context);
         mWorkspacePageIndicatorOverlapWorkspace =
                 res.getDimensionPixelSize(R.dimen.workspace_page_indicator_overlap_workspace);
 

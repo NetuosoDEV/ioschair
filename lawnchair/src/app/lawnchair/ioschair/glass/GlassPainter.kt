@@ -15,13 +15,16 @@ import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.RuntimeShader
 import android.graphics.Shader
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.View
 import androidx.annotation.RequiresApi
 import app.lawnchair.ioschair.IosPrefs
+import java.lang.ref.WeakReference
 import kotlin.math.min
 
 /**
@@ -37,8 +40,11 @@ import kotlin.math.min
  *  4. **Specular rim** – a thin highlight whose intensity depends on the angle between the edge
  *     normal and the light direction ([GlassMotion] tilts it with the device).
  *
- * On Android 13+ this is a single AGSL [RuntimeShader]; older versions get a canvas-composited
- * approximation (backdrop + tint + gradient rim).
+ * Backdrop sources, in "auto" order:
+ *  - [SystemBlur]: real-time SurfaceFlinger blur of what is behind the window (works with live
+ *    wallpapers, follows animations), with the glass film drawn on top;
+ *  - the wallpaper bitmap through the AGSL [RuntimeShader] (adds true lensing / dispersion);
+ *  - a denser frosted tint when no blur is possible at all.
  *
  * One painter should be owned by each glass host (it keeps per-host shader instances).
  */
@@ -50,12 +56,18 @@ class GlassPainter(context: Context) {
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val tmpRect = RectF()
+    private val clipBounds = RectF()
+    private val blurBounds = Rect()
     private val loc = IntArray(2)
     private val matrix = Matrix()
 
     private var bitmapShader: BitmapShader? = null
     private var shaderVersion = -1
     private var runtimeShader: Any? = null
+
+    // System (SurfaceFlinger) blur, bound to the host's window.
+    private var blurDrawable: Drawable? = null
+    private var blurRoot: WeakReference<Any>? = null
 
     /** Additional per-surface multiplier for the tint (e.g. folders are a bit denser). */
     var tintBoost = 0f
@@ -84,17 +96,67 @@ class GlassPainter(context: Context) {
         val dark = when (mode) {
             "light" -> false
             "dark" -> true
-            "clear" -> isNight()
             else -> isNight()
         }
         val amount = when (mode) {
             "clear" -> base * 0.35f
-            else -> if (dark) base + 0.14f else base
+            else -> if (dark) base + 0.08f else base + 0.04f
         }.coerceIn(0f, 0.95f)
         return if (dark) {
-            floatArrayOf(0.07f, 0.07f, 0.09f, amount)
+            // iOS dark glass is a smoky graphite, not black.
+            floatArrayOf(0.16f, 0.16f, 0.18f, amount)
         } else {
             floatArrayOf(1f, 1f, 1f, amount)
+        }
+    }
+
+    /** Effective opacity of [view] including all of its ancestors. */
+    private fun effectiveAlpha(view: View): Float {
+        var a = 1f
+        var v: View? = view
+        while (v != null) {
+            if (v.visibility != View.VISIBLE) return 0f
+            a *= v.alpha
+            v = v.parent as? View
+        }
+        return a
+    }
+
+    private fun blurRadiusPx(): Int {
+        val strength = IosPrefs.get(appContext).iosGlassBlur.get().coerceIn(0, 100) / 100f
+        return ((8f + strength * 52f) * density).toInt()
+    }
+
+    private fun ensureBlurDrawable(host: View): Drawable? {
+        val root = SystemBlur.rootOf(host) ?: return null
+        if (blurDrawable == null || blurRoot?.get() !== root) {
+            blurDrawable = SystemBlur.create(host)
+            blurRoot = WeakReference(root)
+        }
+        return blurDrawable
+    }
+
+    /** Which pipeline to use for this frame. */
+    private enum class Mode { SYSTEM_BLUR, SHADER, BITMAP, TINT_ONLY }
+
+    private fun pickMode(canvas: Canvas, hasBitmap: Boolean): Mode {
+        val source = IosPrefs.get(appContext).iosGlassSource.get()
+        val systemOk = canvas.isHardwareAccelerated && SystemBlur.isAvailable(appContext)
+        val shaderOk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !shaderBroken &&
+            hasBitmap && GlassBackdrop.isRealWallpaper
+        return when (source) {
+            "wallpaper" -> when {
+                shaderOk -> Mode.SHADER
+                hasBitmap && GlassBackdrop.isRealWallpaper -> Mode.BITMAP
+                systemOk -> Mode.SYSTEM_BLUR
+                else -> Mode.TINT_ONLY
+            }
+            else -> when {
+                systemOk -> Mode.SYSTEM_BLUR
+                shaderOk -> Mode.SHADER
+                hasBitmap && GlassBackdrop.isRealWallpaper -> Mode.BITMAP
+                else -> Mode.TINT_ONLY
+            }
         }
     }
 
@@ -121,38 +183,82 @@ class GlassPainter(context: Context) {
     ) {
         if (right <= left || bottom <= top || alpha <= 0f) return
         GlassBackdrop.track(host)
-        host.getLocationOnScreen(loc)
-        val screenX = loc[0] + left
-        val screenY = loc[1] + top
         val w = right - left
         val h = bottom - top
         val r = min(radius, min(w, h) / 2f)
+
+        val backdrop = ensureBitmapShader()
+        val mode = pickMode(canvas, backdrop != null)
+
+        if (mode == Mode.SYSTEM_BLUR) {
+            drawSystemBlur(canvas, host, left, top, right, bottom, r, alpha, clip)
+        } else {
+            blurDrawable?.alpha = 0
+        }
 
         val save = canvas.save()
         if (clip != null) canvas.clipPath(clip)
         canvas.translate(left, top)
 
-        val backdrop = ensureBitmapShader()
-        if (backdrop != null) {
+        if (backdrop != null && (mode == Mode.SHADER || mode == Mode.BITMAP)) {
+            host.getLocationOnScreen(loc)
             matrix.reset()
             matrix.setScale(GlassBackdrop.scale, GlassBackdrop.scale)
-            matrix.postTranslate(-screenX, -screenY)
+            matrix.postTranslate(-(loc[0] + left), -(loc[1] + top))
             backdrop.setLocalMatrix(matrix)
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && backdrop != null && !shaderBroken) {
-            try {
-                drawShader(canvas, backdrop, w, h, r, alpha)
+        when (mode) {
+            Mode.SHADER -> try {
+                drawShader(canvas, backdrop!!, w, h, r, alpha)
             } catch (t: Throwable) {
                 // Never take the launcher down because of a GPU / shader issue.
                 android.util.Log.w("GlassPainter", "Liquid Glass shader failed, using fallback", t)
                 shaderBroken = true
-                drawCompat(canvas, backdrop, w, h, r, alpha)
+                drawOverlay(canvas, backdrop, w, h, r, alpha, blurred = true)
             }
-        } else {
-            drawCompat(canvas, backdrop, w, h, r, alpha)
+            Mode.BITMAP -> drawOverlay(canvas, backdrop, w, h, r, alpha, blurred = true)
+            Mode.SYSTEM_BLUR -> drawOverlay(canvas, null, w, h, r, alpha, blurred = true)
+            Mode.TINT_ONLY -> drawOverlay(canvas, null, w, h, r, alpha, blurred = false)
         }
         canvas.restoreToCount(save)
+    }
+
+    private fun drawSystemBlur(
+        canvas: Canvas,
+        host: View,
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        r: Float,
+        alpha: Float,
+        clip: Path?,
+    ) {
+        val d = ensureBlurDrawable(host) ?: return
+        var l = left
+        var t = top
+        var rr = right
+        var b = bottom
+        var radius = r
+        if (clip != null) {
+            // Blur regions are rounded rects: follow the clip (e.g. folder reveal) bounds.
+            clip.computeBounds(clipBounds, true)
+            l = maxOf(l, clipBounds.left)
+            t = maxOf(t, clipBounds.top)
+            rr = minOf(rr, clipBounds.right)
+            b = minOf(b, clipBounds.bottom)
+            if (rr <= l || b <= t) {
+                d.alpha = 0
+                return
+            }
+            radius = min(radius, min(rr - l, b - t) / 2f)
+        }
+        blurBounds.set(l.toInt(), t.toInt(), rr.toInt(), b.toInt())
+        d.bounds = blurBounds
+        SystemBlur.configure(d, blurRadiusPx(), radius, Color.TRANSPARENT)
+        d.alpha = (255 * (alpha * effectiveAlpha(host)).coerceIn(0f, 1f)).toInt()
+        d.draw(canvas)
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -183,22 +289,36 @@ class GlassPainter(context: Context) {
         fillPaint.shader = null
     }
 
-    private fun drawCompat(canvas: Canvas, backdrop: BitmapShader?, w: Float, h: Float, r: Float, alpha: Float) {
+    /**
+     * Glass film drawn on top of a blurred backdrop (system blur or wallpaper bitmap): tint,
+     * top sheen, soft inner lens glow and a light-direction dependent specular rim.
+     */
+    private fun drawOverlay(
+        canvas: Canvas,
+        backdrop: BitmapShader?,
+        w: Float,
+        h: Float,
+        r: Float,
+        alpha: Float,
+        blurred: Boolean,
+    ) {
         val prefs = IosPrefs.get(appContext)
-        val a = (alpha.coerceIn(0f, 1f) * 255).toInt()
+        val a = alpha.coerceIn(0f, 1f)
         tmpRect.set(0f, 0f, w, h)
         val tint = resolveTint()
         if (backdrop != null) {
             fillPaint.shader = backdrop
-            fillPaint.alpha = a
+            fillPaint.alpha = (a * 255).toInt()
             canvas.drawRoundRect(tmpRect, r, r, fillPaint)
             fillPaint.shader = null
-        } else {
-            // No backdrop yet: plain frosted film.
-            tint[3] = (tint[3] + 0.22f).coerceAtMost(0.9f)
         }
+        if (!blurred) {
+            // No blur available at all: denser frosted film so content stays legible.
+            tint[3] = (tint[3] + 0.18f).coerceAtMost(0.9f)
+        }
+        fillPaint.shader = null
         fillPaint.color = Color.argb(
-            (tint[3] * a).toInt(),
+            (tint[3] * a * 255).toInt(),
             (tint[0] * 255).toInt(),
             (tint[1] * 255).toInt(),
             (tint[2] * 255).toInt(),
@@ -206,23 +326,71 @@ class GlassPainter(context: Context) {
         canvas.drawRoundRect(tmpRect, r, r, fillPaint)
 
         val highlight = prefs.iosGlassHighlight.get().coerceIn(0f, 1f)
-        val rimAlpha = (highlight * 0.85f * a).toInt()
-        rimPaint.strokeWidth = 1.2f * density
-        rimPaint.shader = LinearGradient(
+
+        // Top sheen.
+        fillPaint.shader = LinearGradient(
             0f,
             0f,
-            w,
+            0f,
             h,
-            intArrayOf(
-                Color.argb(rimAlpha, 255, 255, 255),
-                Color.argb(rimAlpha / 6, 255, 255, 255),
-                Color.argb(rimAlpha / 2, 255, 255, 255),
-            ),
-            floatArrayOf(0f, 0.55f, 1f),
+            intArrayOf(Color.argb((highlight * a * 34).toInt(), 255, 255, 255), Color.TRANSPARENT),
+            floatArrayOf(0f, 0.55f),
             Shader.TileMode.CLAMP,
         )
-        val inset = rimPaint.strokeWidth / 2f
-        tmpRect.inset(inset, inset)
+        fillPaint.color = Color.WHITE
+        canvas.drawRoundRect(tmpRect, r, r, fillPaint)
+        fillPaint.shader = null
+
+        // Light direction (top-left by default, follows device tilt).
+        val lx = -GlassMotion.lightX
+        val ly = -GlassMotion.lightY
+        val cx = w / 2f
+        val cy = h / 2f
+        val ext = maxOf(w, h) / 2f
+        val sx = cx + lx * ext
+        val sy = cy + ly * ext
+        val ex = cx - lx * ext
+        val ey = cy - ly * ext
+
+        // Soft inner lens glow along the edge.
+        val glowW = (min(w, h) * 0.18f).coerceIn(3f * density, 10f * density)
+        val glowAlpha = (highlight * a * 40).toInt()
+        rimPaint.strokeWidth = glowW
+        rimPaint.shader = LinearGradient(
+            sx,
+            sy,
+            ex,
+            ey,
+            intArrayOf(
+                Color.argb(glowAlpha, 255, 255, 255),
+                Color.argb(glowAlpha / 5, 255, 255, 255),
+                Color.argb(glowAlpha / 2, 255, 255, 255),
+            ),
+            floatArrayOf(0f, 0.5f, 1f),
+            Shader.TileMode.CLAMP,
+        )
+        var inset = glowW / 2f
+        tmpRect.set(inset, inset, w - inset, h - inset)
+        canvas.drawRoundRect(tmpRect, (r - inset).coerceAtLeast(0f), (r - inset).coerceAtLeast(0f), rimPaint)
+
+        // Crisp specular rim.
+        val rimAlpha = (highlight * a * 235).toInt()
+        rimPaint.strokeWidth = 1.1f * density
+        rimPaint.shader = LinearGradient(
+            sx,
+            sy,
+            ex,
+            ey,
+            intArrayOf(
+                Color.argb(rimAlpha, 255, 255, 255),
+                Color.argb(rimAlpha / 7, 255, 255, 255),
+                Color.argb(rimAlpha / 2, 255, 255, 255),
+            ),
+            floatArrayOf(0f, 0.5f, 1f),
+            Shader.TileMode.CLAMP,
+        )
+        inset = rimPaint.strokeWidth / 2f
+        tmpRect.set(inset, inset, w - inset, h - inset)
         canvas.drawRoundRect(tmpRect, r - inset, r - inset, rimPaint)
         rimPaint.shader = null
     }

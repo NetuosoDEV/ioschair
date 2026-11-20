@@ -339,7 +339,8 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         if (mFolderGlass == null) return;
         Rect b = mBackground.getBounds();
         mFolderGlass.draw(canvas, this, b.left, b.top, b.right, b.bottom,
-                mBackground.getCornerRadius(), 1f, null);
+                mBackground.getCornerRadius(), 1f,
+                mClipPath != null ? mClipPath.getPath() : null);
     }
 
     @Override
@@ -2045,7 +2046,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             int count = canvas.save();
             canvas.clipPath(mClipPath.getPath());
             drawFolderGlass(canvas);
-            mBackground.draw(canvas);
+            if (mFolderGlass == null) mBackground.draw(canvas);
             if (!mIsAnimatingClosed) {
                 // If animating open, clip the content to the clip path to keep in bounds.
                 super.dispatchDraw(canvas);
@@ -2057,7 +2058,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             }
         } else {
             drawFolderGlass(canvas);
-            mBackground.draw(canvas);
+            if (mFolderGlass == null) mBackground.draw(canvas);
             super.dispatchDraw(canvas);
         }
     }

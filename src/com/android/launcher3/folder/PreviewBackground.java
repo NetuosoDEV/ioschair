@@ -311,9 +311,7 @@ public class PreviewBackground extends DelegatedCellDrawing {
 
     public void drawBackground(Canvas canvas) {
         if (drawGlass(canvas)) {
-            mPaint.setStyle(Paint.Style.FILL);
-            mPaint.setColor(getBgColor());
-            getShape().drawShape(canvas, getOffsetX(), getOffsetY(), getScaledRadius(), mPaint);
+            // Glass has its own tint; the Material folder colour would make it opaque.
             return;
         }
         mPaint.setStyle(Paint.Style.FILL);

@@ -23,7 +23,7 @@
     <string name="ios_glass_saturation">Насыщенность</string>
     <string name="ios_glass_motion">Блики следуют за наклоном</string>
     <string name="ios_wallpaper_access">Разрешить доступ к обоям</string>
-    <string name="ios_wallpaper_access_desc">Нужно для настоящего матового стекла. Без доступа стекло тонируется только цветами обоев.</string>
+    <string name="ios_wallpaper_access_desc">Нужно только для источника «Картинка обоев» с настоящим преломлением. Живые обои всегда используют системное размытие.</string>
     <string name="ios_wallpaper_access_granted">Доступ к обоям есть — стекло размывает ваши обои</string>
     <string name="ios_dock_glass">Стеклянный док</string>
     <string name="ios_dock_radius">Радиус скругления</string>
@@ -46,4 +46,9 @@
     <string name="ios_icon_style_dark">Тёмный</string>
     <string name="ios_icon_style_clear">Прозрачный (Liquid Glass)</string>
     <string name="ios_icon_style_tinted">С оттенком</string>
+    <string name="ios_glass_source">Источник стекла</string>
+    <string name="ios_glass_source_auto">Автоматически (системное размытие)</string>
+    <string name="ios_glass_source_system">Системное размытие в реальном времени</string>
+    <string name="ios_glass_source_wallpaper">Картинка обоев (настоящее преломление)</string>
+    <string name="ios_system_blur_unavailable">Системное размытие на устройстве выключено (экономия батареи или отключено «Разрешить размытие на уровне окон» в параметрах разработчика). Стекло использует картинку обоев или матовую тонировку.</string>
 </resources>

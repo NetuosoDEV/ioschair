@@ -151,6 +151,13 @@ public class Hotseat extends FrameLayout implements Insettable {
 
         mIconsContainer = new FrameLayout(context) {
             @Override
+            public void setAlpha(float alpha) {
+                super.setAlpha(alpha);
+                // IOSChair: system blur is composited outside the view tree, redraw to update it.
+                if (mDockGlass != null) invalidate();
+            }
+
+            @Override
             protected void dispatchDraw(android.graphics.Canvas canvas) {
                 drawDockGlass(this, canvas);
                 super.dispatchDraw(canvas);

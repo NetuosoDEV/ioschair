@@ -7,17 +7,11 @@
 package app.lawnchair.ioschair.glass
 
 import android.annotation.SuppressLint
-import android.app.WallpaperColors
 import android.app.WallpaperManager
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.RadialGradient
-import android.graphics.Shader
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -41,8 +35,8 @@ import kotlin.math.roundToInt
  * on-screen position, which gives a convincing "frosted glass over the wallpaper" effect without
  * needing system cross-window blur (which third-party launchers cannot use).
  *
- * When wallpaper access is not granted, a synthetic backdrop is generated from
- * [WallpaperColors] (no permission needed) so the glass still picks up the wallpaper's tint.
+ * Only used for static wallpapers with wallpaper access granted. Live wallpapers or missing
+ * access leave [bitmap] null and painters use real-time [SystemBlur] instead.
  */
 object GlassBackdrop {
 
@@ -93,6 +87,13 @@ object GlassBackdrop {
         appContext = app
         runCatching {
             WallpaperManager.getInstance(app).addOnColorsChangedListener(colorsListener, mainHandler)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Battery saver / developer options can toggle cross-window blur at runtime.
+            runCatching {
+                app.getSystemService(WindowManager::class.java)
+                    ?.addCrossWindowBlurEnabledListener(app.mainExecutor) { invalidateHosts() }
+            }
         }
         refresh(app)
     }
@@ -184,7 +185,10 @@ object GlassBackdrop {
             FileAccessManager.getInstance(context).wallpaperAccessState.value != FileAccessState.Denied
         }.getOrDefault(false)
         val wm = WallpaperManager.getInstance(context)
-        if (hasAccess) {
+        // Live wallpapers (e.g. Xiaomi "super wallpapers") have no readable bitmap: getDrawable()
+        // returns the stock image, which would show a wrong/grey backdrop. Use system blur instead.
+        val isLive = runCatching { wm.wallpaperInfo != null }.getOrDefault(false)
+        if (hasAccess && !isLive) {
             val drawable = runCatching { wm.drawable }.getOrNull()
             if (drawable != null && drawable.intrinsicWidth > 0 && drawable.intrinsicHeight > 0) {
                 // Center-crop the wallpaper to the screen like the system does (no scrolling).
@@ -201,7 +205,13 @@ object GlassBackdrop {
             }
         }
         if (!real) {
-            drawSyntheticBackdrop(context, canvas, bw, bh)
+            // Never fake the backdrop with a synthetic image: it reads as a grey placeholder.
+            // Painters fall back to real-time system blur or a translucent frosted tint.
+            source.recycle()
+            bitmap = null
+            isRealWallpaper = false
+            version++
+            return
         }
 
         val radius = (4 + strength * 21).roundToInt().coerceIn(1, 25)
@@ -223,26 +233,6 @@ object GlassBackdrop {
         bitmap = blurred
         isRealWallpaper = real
         version++
-    }
-
-    private fun drawSyntheticBackdrop(context: Context, canvas: Canvas, w: Int, h: Int) {
-        val colors: WallpaperColors? = runCatching {
-            WallpaperManager.getInstance(context).getWallpaperColors(WallpaperManager.FLAG_SYSTEM)
-        }.getOrNull()
-        val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        val fallback = if (night) Color.rgb(40, 40, 52) else Color.rgb(170, 180, 205)
-        val c1 = colors?.primaryColor?.toArgb() ?: fallback
-        val c2 = colors?.secondaryColor?.toArgb() ?: c1
-        val c3 = colors?.tertiaryColor?.toArgb() ?: c2
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), intArrayOf(c2, c1, c3), null, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
-        // A couple of soft blobs so refraction has something to bend.
-        paint.shader = RadialGradient(w * 0.25f, h * 0.3f, w * 0.7f, c3, Color.TRANSPARENT, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
-        paint.shader = RadialGradient(w * 0.8f, h * 0.75f, w * 0.8f, c2, Color.TRANSPARENT, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
     }
 
     private fun computeLuminance(bmp: Bitmap): Float {

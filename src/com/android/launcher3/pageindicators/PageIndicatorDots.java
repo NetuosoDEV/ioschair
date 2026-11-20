@@ -210,6 +210,21 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
         }
     }
 
+    @Override
+    public void setAlpha(float alpha) {
+        super.setAlpha(alpha);
+        if (mIosPill) invalidate();
+    }
+
+    /** IOSChair: extra px to lift the Search pill so it clears the glass dock. */
+    public static int getIosPillLift(Context context) {
+        if (!app.lawnchair.ioschair.IosPrefs.searchPill(context)) return 0;
+        float density = context.getResources().getDisplayMetrics().density;
+        float dockPad = app.lawnchair.ioschair.IosPrefs.dockGlass(context)
+                ? app.lawnchair.ioschair.IosPrefs.get(context).getIosDockPadding().get() : 0f;
+        return Math.round((dockPad + 8f) * density);
+    }
+
     private void drawIosPill(Canvas canvas) {
         float density = getResources().getDisplayMetrics().density;
         boolean scrolling = mNumPages > 1 && mTotalScroll != 0;

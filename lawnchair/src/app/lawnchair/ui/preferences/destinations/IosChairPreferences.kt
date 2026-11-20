@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.lawnchair.hotseat.DisabledHotseat
 import app.lawnchair.icons.shape.IconShape
 import app.lawnchair.ioschair.glass.GlassBackdrop
+import app.lawnchair.ioschair.glass.SystemBlur
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.preferenceManager2
@@ -35,6 +36,7 @@ import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
 import app.lawnchair.ui.preferences.components.controls.MainSwitchPreference
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
+import app.lawnchair.ui.preferences.components.controls.WarningPreference
 import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
@@ -85,8 +87,6 @@ fun IosChairPreferences(
                     prefs2.showIconLabelsOnHomeScreen.set(true)
                     prefs2.homeIconSizeFactor.set(1.12f)
                     prefs2.homeIconLabelSizeFactor.set(0.92f)
-                    prefs2.folderPreviewBackgroundOpacity.set(0f)
-                    prefs2.folderBackgroundOpacity.set(0f)
                 }
             }
             ClickablePreference(
@@ -146,6 +146,18 @@ fun IosChairPreferences(
             description = stringResource(R.string.ios_glass_enabled_desc),
         ) {
             PreferenceGroup(heading = stringResource(R.string.ios_group_glass)) {
+                ListPreference(
+                    adapter = prefs.iosGlassSource.getAdapter(),
+                    entries = listOf(
+                        ListPreferenceEntry("auto") { stringResource(R.string.ios_glass_source_auto) },
+                        ListPreferenceEntry("system") { stringResource(R.string.ios_glass_source_system) },
+                        ListPreferenceEntry("wallpaper") { stringResource(R.string.ios_glass_source_wallpaper) },
+                    ),
+                    label = stringResource(R.string.ios_glass_source),
+                )
+                if (!SystemBlur.isAvailable(context)) {
+                    WarningPreference(stringResource(R.string.ios_system_blur_unavailable))
+                }
                 if (hasWallpaperAccess) {
                     ClickablePreference(
                         label = stringResource(R.string.ios_wallpaper_access_granted),

@@ -229,6 +229,12 @@ class PreferenceManager @Inject constructor(
     /** 0..100, amount of frosting (down-sample + blur kernel). */
     val iosGlassBlur = IntPref("ios_glass_blur", 42, glassRebuild)
 
+    /**
+     * Where the glass gets its backdrop: auto (system real-time blur, else wallpaper) |
+     * system | wallpaper (wallpaper bitmap with true lensing; needs wallpaper access).
+     */
+    val iosGlassSource = StringPref("ios_glass_source", "auto", glassInvalidate)
+
     /** auto | light | dark | clear */
     val iosGlassTintMode = StringPref("ios_glass_tint_mode", "auto", glassInvalidate)
     val iosGlassTintOpacity = FloatPref("ios_glass_tint_opacity", 0.16f, glassInvalidate)

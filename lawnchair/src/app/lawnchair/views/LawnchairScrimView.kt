@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import app.lawnchair.ioschair.IosPrefs
 import app.lawnchair.ioschair.glass.GlassBackdrop
+import app.lawnchair.ioschair.glass.SystemBlur
 import android.util.AttributeSet
 import app.lawnchair.preferences.PreferenceManager
 import com.android.launcher3.R
@@ -31,7 +32,34 @@ class LawnchairScrimView(context: Context, attrs: AttributeSet?) : ScrimView(con
     private val backdropMatrix = Matrix()
     private val loc = IntArray(2)
 
+    private var blurDrawable: android.graphics.drawable.Drawable? = null
+    private var blurRoot: Any? = null
+
+    override fun setAlpha(alpha: Float) {
+        super.setAlpha(alpha)
+        if (drawerGlass) invalidate()
+    }
+
     override fun draw(canvas: Canvas) {
+        if (drawerGlass && canvas.isHardwareAccelerated && SystemBlur.isAvailable(context)) {
+            val maxAlpha = (255f * drawerOpacity).coerceAtLeast(1f)
+            val progress = (Color.alpha(mBackgroundColor) / maxAlpha).coerceIn(0f, 1f) * alpha
+            val root = SystemBlur.rootOf(this)
+            if (root != null && (blurDrawable == null || blurRoot !== root)) {
+                blurDrawable = SystemBlur.create(this)
+                blurRoot = root
+            }
+            blurDrawable?.let { d ->
+                val strength = IosPrefs.get(context).iosGlassBlur.get().coerceIn(0, 100) / 100f
+                val radius = ((30f + strength * 50f) * resources.displayMetrics.density).toInt()
+                d.setBounds(0, 0, width, height)
+                SystemBlur.configure(d, radius, 0f, Color.TRANSPARENT)
+                d.alpha = (progress * 255).toInt()
+                if (progress > 0f) d.draw(canvas)
+            }
+            super.draw(canvas)
+            return
+        }
         if (drawerGlass) {
             val bmp = GlassBackdrop.bitmap
             val maxAlpha = (255f * drawerOpacity).coerceAtLeast(1f)

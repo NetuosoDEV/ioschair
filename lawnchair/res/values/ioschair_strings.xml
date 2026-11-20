@@ -24,7 +24,7 @@
     <string name="ios_glass_saturation">Vibrancy</string>
     <string name="ios_glass_motion">Glints follow device tilt</string>
     <string name="ios_wallpaper_access">Allow wallpaper access</string>
-    <string name="ios_wallpaper_access_desc">Needed for real frosted glass. Without it the glass is tinted from wallpaper colours only.</string>
+    <string name="ios_wallpaper_access_desc">Only needed for the “Wallpaper image” source with true lensing. Live wallpapers always use system blur.</string>
     <string name="ios_wallpaper_access_granted">Wallpaper access granted — glass samples your wallpaper</string>
     <string name="ios_dock_glass">Glass dock</string>
     <string name="ios_dock_radius">Corner radius</string>
@@ -47,4 +47,9 @@
     <string name="ios_icon_style_dark">Dark</string>
     <string name="ios_icon_style_clear">Clear (Liquid Glass)</string>
     <string name="ios_icon_style_tinted">Tinted</string>
+    <string name="ios_glass_source">Glass source</string>
+    <string name="ios_glass_source_auto">Automatic (system blur)</string>
+    <string name="ios_glass_source_system">System real-time blur</string>
+    <string name="ios_glass_source_wallpaper">Wallpaper image (true lensing)</string>
+    <string name="ios_system_blur_unavailable">System blur is off on this device (battery saver or “Allow window-level blurs” disabled in Developer options). Glass falls back to the wallpaper image or a frosted tint.</string>
 </resources>
