@@ -61,6 +61,8 @@ class GlassPainter(context: Context) {
     private val loc = IntArray(2)
     private val matrix = Matrix()
 
+    private val grainPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var grainShader: BitmapShader? = null
     private var bitmapShader: BitmapShader? = null
     private var shaderVersion = -1
     private var runtimeShader: Any? = null
@@ -243,6 +245,7 @@ class GlassPainter(context: Context) {
             Mode.SYSTEM_BLUR -> drawOverlay(canvas, null, w, h, r, alpha, blurred = true)
             Mode.TINT_ONLY -> drawOverlay(canvas, null, w, h, r, alpha, blurred = false)
         }
+        drawGrain(canvas, w, h, r, alpha)
         canvas.restoreToCount(save)
     }
 
@@ -336,6 +339,17 @@ class GlassPainter(context: Context) {
         canvas.drawRect(tmpRect, fillPaint)
         canvas.restore()
         fillPaint.shader = null
+    }
+
+    /** iOS-like fine frosted grain on top of the glass (strength from settings). */
+    private fun drawGrain(canvas: Canvas, w: Float, h: Float, r: Float, alpha: Float) {
+        val grain = IosPrefs.get(appContext).iosGlassGrain.get().coerceIn(0f, 1f)
+        if (grain <= 0f) return
+        val shader = grainShader ?: GlassNoise.shader(maxOf(1f, density / 2f)).also { grainShader = it }
+        grainPaint.shader = shader
+        grainPaint.alpha = (grain * alpha.coerceIn(0f, 1f) * 255).toInt()
+        tmpRect.set(0f, 0f, w, h)
+        canvas.drawRoundRect(tmpRect, r, r, grainPaint)
     }
 
     /**

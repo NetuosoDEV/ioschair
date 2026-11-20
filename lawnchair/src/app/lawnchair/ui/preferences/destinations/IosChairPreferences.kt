@@ -226,6 +226,13 @@ fun IosChairPreferences(
                     step = 0.05f,
                     showAsPercentage = true,
                 )
+                SliderPreference(
+                    label = stringResource(R.string.ios_glass_grain),
+                    adapter = prefs.iosGlassGrain.getAdapter(),
+                    valueRange = 0f..1f,
+                    step = 0.01f,
+                    showAsPercentage = true,
+                )
                 SwitchPreference(
                     adapter = prefs.iosGlassMotion.getAdapter(),
                     label = stringResource(R.string.ios_glass_motion),

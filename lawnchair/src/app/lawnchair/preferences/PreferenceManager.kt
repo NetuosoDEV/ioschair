@@ -243,6 +243,9 @@ class PreferenceManager @Inject constructor(
     val iosGlassDispersion = FloatPref("ios_glass_dispersion", 0.35f, glassInvalidate)
     val iosGlassSaturation = FloatPref("ios_glass_saturation", 1.4f, glassInvalidate)
 
+    /** Fine film grain on frosted glass (0..1). */
+    val iosGlassGrain = FloatPref("ios_glass_grain", 0.35f, glassInvalidate)
+
     /** Glints follow device tilt, like iOS 26. */
     val iosGlassMotion = BoolPref("ios_glass_motion", true, recreate)
 
