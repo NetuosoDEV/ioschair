@@ -14,20 +14,21 @@ object IosPrefs {
     @JvmStatic
     fun get(context: Context): PreferenceManager = PreferenceManager.getInstance(context)
 
+    /** Liquid Glass refraction effect (frosted glass surfaces work without it). */
     @JvmStatic
     fun glass(context: Context): Boolean = get(context).iosGlassEnabled.get()
 
     @JvmStatic
-    fun dockGlass(context: Context): Boolean = glass(context) && get(context).iosDockGlass.get()
+    fun dockGlass(context: Context): Boolean = get(context).iosDockGlass.get()
 
     @JvmStatic
-    fun folderGlass(context: Context): Boolean = glass(context) && get(context).iosFolderGlass.get()
+    fun folderGlass(context: Context): Boolean = get(context).iosFolderGlass.get()
 
     @JvmStatic
-    fun popupGlass(context: Context): Boolean = glass(context) && get(context).iosPopupGlass.get()
+    fun popupGlass(context: Context): Boolean = get(context).iosPopupGlass.get()
 
     @JvmStatic
-    fun drawerGlass(context: Context): Boolean = glass(context) && get(context).iosDrawerGlass.get()
+    fun drawerGlass(context: Context): Boolean = get(context).iosDrawerGlass.get()
 
     @JvmStatic
     fun searchPill(context: Context): Boolean = get(context).iosSearchPill.get()

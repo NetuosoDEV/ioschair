@@ -75,6 +75,16 @@ class GlassPainter(context: Context) {
     /** Overrides for very small surfaces (folder icons) where lensing must be gentler. */
     var refractionScale = 1f
 
+    /** Draw the soft ReGlass drop shadow around the surface (off for icons). */
+    var shadow = true
+
+    /**
+     * Multiply the system-blur opacity with the host's ancestors' alpha. Only safe for hosts that
+     * redraw when their alpha changes (dock, Search pill); popups fade in via a parent alpha
+     * animation that does not redraw children, so they must not track it.
+     */
+    var trackHostAlpha = false
+
     private fun ensureBitmapShader(): BitmapShader? {
         val bmp = GlassBackdrop.bitmap ?: return null
         if (shaderVersion != GlassBackdrop.version || bitmapShader == null) {
@@ -140,21 +150,30 @@ class GlassPainter(context: Context) {
     private enum class Mode { SYSTEM_BLUR, SHADER, BITMAP, TINT_ONLY }
 
     private fun pickMode(canvas: Canvas, hasBitmap: Boolean): Mode {
-        val source = IosPrefs.get(appContext).iosGlassSource.get()
+        val prefs = IosPrefs.get(appContext)
+        val source = prefs.iosGlassSource.get()
+        // "Liquid Glass" = refraction shader; when off, surfaces are frosted (matte) glass.
+        val liquid = prefs.iosGlassEnabled.get()
         val systemOk = canvas.isHardwareAccelerated && SystemBlur.isAvailable(appContext)
-        val shaderOk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !shaderBroken &&
-            hasBitmap && GlassBackdrop.isRealWallpaper
+        val realBitmap = hasBitmap && GlassBackdrop.isRealWallpaper
+        val shaderOk = liquid && realBitmap && !shaderBroken &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val wallpaperMode = if (shaderOk) Mode.SHADER else Mode.BITMAP
         return when (source) {
+            "system" -> when {
+                systemOk -> Mode.SYSTEM_BLUR
+                realBitmap -> wallpaperMode
+                else -> Mode.TINT_ONLY
+            }
             "wallpaper" -> when {
-                shaderOk -> Mode.SHADER
-                hasBitmap && GlassBackdrop.isRealWallpaper -> Mode.BITMAP
+                realBitmap -> wallpaperMode
                 systemOk -> Mode.SYSTEM_BLUR
                 else -> Mode.TINT_ONLY
             }
             else -> when {
-                systemOk -> Mode.SYSTEM_BLUR
                 shaderOk -> Mode.SHADER
-                hasBitmap && GlassBackdrop.isRealWallpaper -> Mode.BITMAP
+                systemOk -> Mode.SYSTEM_BLUR
+                realBitmap -> Mode.BITMAP
                 else -> Mode.TINT_ONLY
             }
         }
@@ -200,17 +219,20 @@ class GlassPainter(context: Context) {
         if (clip != null) canvas.clipPath(clip)
         canvas.translate(left, top)
 
+        // Shader draws a larger area so the drop shadow fits around the surface.
+        val pad = if (mode == Mode.SHADER && shadow && clip == null) 22f * density else 0f
         if (backdrop != null && (mode == Mode.SHADER || mode == Mode.BITMAP)) {
             host.getLocationOnScreen(loc)
             matrix.reset()
             matrix.setScale(GlassBackdrop.scale, GlassBackdrop.scale)
-            matrix.postTranslate(-(loc[0] + left), -(loc[1] + top))
+            val ox = if (mode == Mode.SHADER) pad else 0f
+            matrix.postTranslate(-(loc[0] + left - ox), -(loc[1] + top - ox))
             backdrop.setLocalMatrix(matrix)
         }
 
         when (mode) {
             Mode.SHADER -> try {
-                drawShader(canvas, backdrop!!, w, h, r, alpha)
+                drawShader(canvas, backdrop!!, w, h, r, alpha, pad)
             } catch (t: Throwable) {
                 // Never take the launcher down because of a GPU / shader issue.
                 android.util.Log.w("GlassPainter", "Liquid Glass shader failed, using fallback", t)
@@ -257,35 +279,62 @@ class GlassPainter(context: Context) {
         blurBounds.set(l.toInt(), t.toInt(), rr.toInt(), b.toInt())
         d.bounds = blurBounds
         SystemBlur.configure(d, blurRadiusPx(), radius, Color.TRANSPARENT)
-        d.alpha = (255 * (alpha * effectiveAlpha(host)).coerceIn(0f, 1f)).toInt()
+        val hostAlpha = if (trackHostAlpha) effectiveAlpha(host) else 1f
+        d.alpha = (255 * (alpha * hostAlpha).coerceIn(0f, 1f)).toInt()
         d.draw(canvas)
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun drawShader(canvas: Canvas, backdrop: BitmapShader, w: Float, h: Float, r: Float, alpha: Float) {
+    private fun drawShader(
+        canvas: Canvas,
+        backdrop: BitmapShader,
+        w: Float,
+        h: Float,
+        r: Float,
+        alpha: Float,
+        pad: Float,
+    ) {
         val prefs = IosPrefs.get(appContext)
         val shader = (runtimeShader as? RuntimeShader) ?: RuntimeShader(LIQUID_GLASS_AGSL).also {
             runtimeShader = it
         }
         val tint = resolveTint()
-        val minSide = min(w, h)
+        // One ReGlass unit (a Minecraft framebuffer pixel) ~ 1.2dp on a phone.
+        val unit = 1.2f * density
         val refraction = prefs.iosGlassRefraction.get().coerceIn(0f, 1f) * refractionScale
+        val highlight = prefs.iosGlassHighlight.get().coerceIn(0f, 1f) / 0.7f
+        // Rim thickness: ReGlass default 13.15 units, but never deeper than a third of the surface.
+        val thickness = minOf(13.15f, min(w, h) / unit / 3f)
         shader.setFloatUniform("uSize", w, h)
+        shader.setFloatUniform("uPad", pad)
         shader.setFloatUniform("uRadius", r)
-        shader.setFloatUniform("uRefraction", refraction * minSide * 0.22f)
-        shader.setFloatUniform("uEdge", (minSide * 0.32f).coerceAtMost(28f * density).coerceAtLeast(4f * density))
-        shader.setFloatUniform("uTint", tint[0], tint[1], tint[2], tint[3])
-        shader.setFloatUniform("uHighlight", prefs.iosGlassHighlight.get().coerceIn(0f, 1f))
-        shader.setFloatUniform("uDispersion", prefs.iosGlassDispersion.get().coerceIn(0f, 1f))
+        shader.setFloatUniform("uUnit", unit)
+        shader.setFloatUniform("uThickness", thickness)
+        shader.setFloatUniform("uIor", 1.4f)
+        // ReGlass offset = 0.08 * screen height (~86 units at 1080p) for refraction 0.6.
+        shader.setFloatUniform("uRefrScale", refraction / 0.6f * 86.4f * unit * (thickness / 13.15f))
+        shader.setFloatUniform("uDispersion", prefs.iosGlassDispersion.get().coerceIn(0f, 1f) * 20f)
+        shader.setFloatUniform("uFresnelRange", 39.71f)
+        shader.setFloatUniform("uFresnelHard", 0.2f)
+        shader.setFloatUniform("uFresnelFactor", 0.2f * highlight)
+        shader.setFloatUniform("uGlareRange", 30f)
+        shader.setFloatUniform("uGlareHard", 0.2f)
+        shader.setFloatUniform("uGlareFactor", 0.9f * highlight)
+        shader.setFloatUniform("uTint", tint[0], tint[1], tint[2], tint[3] * 0.75f)
         shader.setFloatUniform("uSaturation", prefs.iosGlassSaturation.get().coerceIn(0f, 2.5f))
         shader.setFloatUniform("uLight", GlassMotion.lightX, GlassMotion.lightY)
-        shader.setFloatUniform("uDensity", density)
+        shader.setFloatUniform("uShadowExpand", 18.2f)
+        shader.setFloatUniform("uShadowFactor", if (pad > 0f) 0.208f else 0f)
         shader.setFloatUniform("uAlpha", alpha.coerceIn(0f, 1f))
         shader.setInputShader("backdrop", backdrop)
         fillPaint.shader = shader
         fillPaint.alpha = 255
-        tmpRect.set(0f, 0f, w, h)
-        canvas.drawRoundRect(tmpRect, r, r, fillPaint)
+        tmpRect.set(-pad, -pad, w + pad, h + pad)
+        canvas.save()
+        canvas.translate(-pad, -pad)
+        tmpRect.set(0f, 0f, w + 2 * pad, h + 2 * pad)
+        canvas.drawRect(tmpRect, fillPaint)
+        canvas.restore()
         fillPaint.shader = null
     }
 
@@ -400,82 +449,114 @@ class GlassPainter(context: Context) {
         private var shaderBroken = false
 
         /**
-         * AGSL Liquid Glass shader. Coordinates are local to the surface (0..uSize).
-         * Output is premultiplied.
+         * AGSL port of the ReGlass liquid glass optics
+         * (https://github.com/RedxAx/ReGlass, MIT License, Copyright (c) 2025 ReStudio By RedxAx).
+         *
+         * Rounded-box SDF with analytic gradient, Snell's-law refraction inside a rim of
+         * thickness `uThickness`, per-channel dispersion, Fresnel rim tint, light-direction glare
+         * and a soft drop shadow outside the shape. Adapted for IOSChair: single surface per draw,
+         * Android canvas coordinates (y down), units scaled by display density, tilt-driven light
+         * and premultiplied output.
+         *
+         * Draw area = shape rect grown by `uPad` on every side (room for the shadow).
          */
         const val LIQUID_GLASS_AGSL = """
 uniform shader backdrop;
 uniform float2 uSize;
+uniform float uPad;
 uniform float uRadius;
-uniform float uRefraction;
-uniform float uEdge;
-uniform float4 uTint;
-uniform float uHighlight;
+uniform float uUnit;
+uniform float uThickness;
+uniform float uIor;
+uniform float uRefrScale;
 uniform float uDispersion;
+uniform float uFresnelRange;
+uniform float uFresnelHard;
+uniform float uFresnelFactor;
+uniform float uGlareRange;
+uniform float uGlareHard;
+uniform float uGlareFactor;
+uniform float4 uTint;
 uniform float uSaturation;
 uniform float2 uLight;
-uniform float uDensity;
+uniform float uShadowExpand;
+uniform float uShadowFactor;
 uniform float uAlpha;
 
-float sdRoundRect(float2 p, float2 b, float r) {
-    float2 q = abs(p) - b + float2(r, r);
-    return length(max(q, float2(0.0, 0.0))) + min(max(q.x, q.y), 0.0) - r;
+float3 sdgBox(float2 p, float2 b, float r) {
+    float2 w = abs(p) - (b - float2(r, r));
+    float2 s = float2(p.x < 0.0 ? -1.0 : 1.0, p.y < 0.0 ? -1.0 : 1.0);
+    float g = max(w.x, w.y);
+    float2 q = max(w, float2(0.0, 0.0));
+    float l = length(q);
+    float dist = (g > 0.0) ? l - r : g - r;
+    float2 n = (g > 0.0) ? (q / max(l, 1e-6)) : ((w.x > w.y) ? float2(1.0, 0.0) : float2(0.0, 1.0));
+    return float3(dist, s * n);
+}
+
+float band(float du, float range, float hard) {
+    float k = pow(500.0 / max(range, 1e-6), 2.0) / 1500.0;
+    return clamp(pow(max(1.0 + du * k + hard, 0.0), 5.0), 0.0, 1.0);
 }
 
 half4 main(float2 coord) {
     float2 hs = uSize * 0.5;
-    float2 p = coord - hs;
+    float2 p = coord - float2(uPad, uPad) - hs;
     float r = min(uRadius, min(hs.x, hs.y));
-    float d = sdRoundRect(p, hs, r);
+    float3 g = sdgBox(p, hs, r);
+    float d = g.x;
+    float du = d / uUnit;
 
-    float2 ex = float2(1.0, 0.0);
-    float2 ey = float2(0.0, 1.0);
-    float2 n = float2(
-        sdRoundRect(p + ex, hs, r) - sdRoundRect(p - ex, hs, r),
-        sdRoundRect(p + ey, hs, r) - sdRoundRect(p - ey, hs, r));
-    float nl = length(n);
-    n = nl > 0.0001 ? n / nl : float2(0.0, 0.0);
-
-    // 0 at the rim, 1 once we are uEdge px inside.
-    float depth = clamp(-d / max(uEdge, 1.0), 0.0, 1.0);
-    float bend = (1.0 - depth);
-    bend = bend * bend * bend;
-
-    // Lensing: sample from further inside near the rim (magnifies + bends the backdrop).
-    float2 off = -n * bend * uRefraction;
-
-    float3 col = float3(0.0, 0.0, 0.0);
-    if (uDispersion > 0.001) {
-        float2 dd = off * (0.18 * uDispersion);
-        col.r = backdrop.eval(coord + off + dd).r;
-        col.g = backdrop.eval(coord + off).g;
-        col.b = backdrop.eval(coord + off - dd).b;
-    } else {
-        col = backdrop.eval(coord + off).rgb;
+    // Soft drop shadow (ReGlass bg pass), offset 2 units down.
+    float shA = 0.0;
+    if (uShadowFactor > 0.0) {
+        float ds = sdgBox(p - float2(0.0, 2.0 * uUnit), hs, r).x / uUnit;
+        shA = clamp(exp(-abs(ds) / max(uShadowExpand, 1e-4)) * 0.6 * uShadowFactor, 0.0, 1.0);
     }
 
-    // Vibrancy.
-    float l = dot(col, float3(0.2126, 0.7152, 0.0722));
-    col = mix(float3(l, l, l), col, uSaturation);
+    float aa = clamp(0.5 - d, 0.0, 1.0);
+    if (aa <= 0.0) {
+        return half4(0.0, 0.0, 0.0, half(shA * uAlpha));
+    }
 
-    // Tint film.
-    col = mix(col, uTint.rgb, uTint.a);
+    float2 n = g.yz;
+    float nlen = length(n);
+    if (nlen > 1e-6) n /= nlen;
 
-    // Specular rim: bright where the edge faces the light, softer on the opposite side.
-    float rimW = 1.4 * uDensity;
-    float rim = 1.0 - smoothstep(0.0, rimW, -d);
-    float glow = 1.0 - smoothstep(0.0, rimW * 4.0, -d);
+    // Snell refraction through the rounded rim.
+    float depth = -du;
+    float xR = 1.0 - depth / max(uThickness, 1e-6);
+    float thetaI = asin(pow(clamp(xR, 0.0, 1.0), 2.0));
+    float thetaT = asin(clamp((1.0 / max(uIor, 1e-6)) * sin(thetaI), -1.0, 1.0));
+    float edge = -tan(thetaT - thetaI);
+    if (depth >= uThickness) edge = 0.0;
+    float2 off = -n * edge * uRefrScale;
+
+    float3 col = float3(0.0, 0.0, 0.0);
+    col.r = backdrop.eval(coord + off * (1.0 - (0.985 - 1.0) * uDispersion)).r;
+    col.g = backdrop.eval(coord + off).g;
+    col.b = backdrop.eval(coord + off * (1.0 - (1.015 - 1.0) * uDispersion)).b;
+
+    // Vibrancy (iOS boosts saturation behind glass).
+    float lum = dot(col, float3(0.2126, 0.7152, 0.0722));
+    col = mix(float3(lum, lum, lum), col, uSaturation);
+
+    col = mix(col, uTint.rgb, uTint.a * 0.8);
+
+    float fres = band(du, uFresnelRange, uFresnelHard);
+    float3 fresTint = mix(float3(1.0, 1.0, 1.0), uTint.rgb, uTint.a * 0.5);
+    col = mix(col, fresTint, fres * uFresnelFactor * 0.7 * nlen);
+
+    // Glare: strongest on the edge facing the light, weaker on the opposite edge.
+    float glare = band(du, uGlareRange, uGlareHard);
     float facing = dot(n, -uLight);
-    float spec = rim * (0.22 + 0.78 * max(facing, 0.0)) + rim * 0.5 * max(-facing, 0.0);
-    spec += glow * 0.18 * max(facing, 0.0);
-    col += float3(spec * uHighlight);
-
-    // Inner lens brightening + a faint top sheen.
-    col += float3(bend * 0.07 * uHighlight);
-    col += float3((1.0 - coord.y / uSize.y) * 0.035 * uHighlight);
+    float dirTerm = max(facing, 0.0) + 0.48 * max(-facing, 0.0);
+    col = mix(col, float3(1.0, 1.0, 1.0), clamp(glare * uGlareFactor * 0.45 * dirTerm, 0.0, 1.0));
 
     col = clamp(col, 0.0, 1.0);
-    return half4(half3(col) * half(uAlpha), half(uAlpha));
+    float a = aa * uAlpha;
+    float sa = shA * uAlpha * (1.0 - aa);
+    return half4(half3(col * a), half(a + sa));
 }
 """
     }

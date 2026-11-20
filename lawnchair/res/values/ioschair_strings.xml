@@ -9,8 +9,8 @@
     <string name="ios_group_dock">Dock</string>
     <string name="ios_group_folders">Folders</string>
     <string name="ios_group_home">Home Screen</string>
-    <string name="ios_glass_enabled">Liquid Glass</string>
-    <string name="ios_glass_enabled_desc">Translucent glass that bends and reflects the wallpaper</string>
+    <string name="ios_glass_enabled">Liquid Glass (refraction)</string>
+    <string name="ios_glass_enabled_desc">Lensing, dispersion and glare at the glass edges, like iOS 26. Off: frosted (matte) glass.</string>
     <string name="ios_glass_blur">Frosting</string>
     <string name="ios_glass_tint_mode">Appearance</string>
     <string name="ios_glass_tint_auto">Automatic</string>
@@ -24,7 +24,7 @@
     <string name="ios_glass_saturation">Vibrancy</string>
     <string name="ios_glass_motion">Glints follow device tilt</string>
     <string name="ios_wallpaper_access">Allow wallpaper access</string>
-    <string name="ios_wallpaper_access_desc">Only needed for the “Wallpaper image” source with true lensing. Live wallpapers always use system blur.</string>
+    <string name="ios_wallpaper_access_desc">Needed for Liquid Glass refraction (static wallpapers). Live wallpapers always use frosted system blur.</string>
     <string name="ios_wallpaper_access_granted">Wallpaper access granted — glass samples your wallpaper</string>
     <string name="ios_dock_glass">Glass dock</string>
     <string name="ios_dock_radius">Corner radius</string>
@@ -48,8 +48,9 @@
     <string name="ios_icon_style_clear">Clear (Liquid Glass)</string>
     <string name="ios_icon_style_tinted">Tinted</string>
     <string name="ios_glass_source">Glass source</string>
-    <string name="ios_glass_source_auto">Automatic (system blur)</string>
+    <string name="ios_glass_source_auto">Automatic</string>
     <string name="ios_glass_source_system">System real-time blur</string>
     <string name="ios_glass_source_wallpaper">Wallpaper image (true lensing)</string>
     <string name="ios_system_blur_unavailable">System blur is off on this device (battery saver or “Allow window-level blurs” disabled in Developer options). Glass falls back to the wallpaper image or a frosted tint.</string>
+    <string name="ios_liquid_needs_access">True refraction needs to read your (static) wallpaper. Tap “Allow wallpaper access” below — until then frosted system blur is used.</string>
 </resources>

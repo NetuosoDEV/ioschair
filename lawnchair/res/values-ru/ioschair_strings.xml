@@ -8,8 +8,8 @@
     <string name="ios_group_dock">Док</string>
     <string name="ios_group_folders">Папки</string>
     <string name="ios_group_home">Домашний экран</string>
-    <string name="ios_glass_enabled">Liquid Glass</string>
-    <string name="ios_glass_enabled_desc">Полупрозрачное стекло, преломляющее и отражающее обои</string>
+    <string name="ios_glass_enabled">Liquid Glass (преломление)</string>
+    <string name="ios_glass_enabled_desc">Линза, дисперсия и блики по краям стекла, как в iOS 26. Выключено — матовое стекло.</string>
     <string name="ios_glass_blur">Матовость</string>
     <string name="ios_glass_tint_mode">Оформление</string>
     <string name="ios_glass_tint_auto">Автоматически</string>
@@ -23,7 +23,7 @@
     <string name="ios_glass_saturation">Насыщенность</string>
     <string name="ios_glass_motion">Блики следуют за наклоном</string>
     <string name="ios_wallpaper_access">Разрешить доступ к обоям</string>
-    <string name="ios_wallpaper_access_desc">Нужно только для источника «Картинка обоев» с настоящим преломлением. Живые обои всегда используют системное размытие.</string>
+    <string name="ios_wallpaper_access_desc">Нужно для преломления Liquid Glass (статичные обои). Живые обои всегда используют матовое системное размытие.</string>
     <string name="ios_wallpaper_access_granted">Доступ к обоям есть — стекло размывает ваши обои</string>
     <string name="ios_dock_glass">Стеклянный док</string>
     <string name="ios_dock_radius">Радиус скругления</string>
@@ -47,8 +47,9 @@
     <string name="ios_icon_style_clear">Прозрачный (Liquid Glass)</string>
     <string name="ios_icon_style_tinted">С оттенком</string>
     <string name="ios_glass_source">Источник стекла</string>
-    <string name="ios_glass_source_auto">Автоматически (системное размытие)</string>
+    <string name="ios_glass_source_auto">Автоматически</string>
     <string name="ios_glass_source_system">Системное размытие в реальном времени</string>
     <string name="ios_glass_source_wallpaper">Картинка обоев (настоящее преломление)</string>
     <string name="ios_system_blur_unavailable">Системное размытие на устройстве выключено (экономия батареи или отключено «Разрешить размытие на уровне окон» в параметрах разработчика). Стекло использует картинку обоев или матовую тонировку.</string>
+    <string name="ios_liquid_needs_access">Для настоящего преломления нужно читать ваши (статичные) обои. Нажмите «Разрешить доступ к обоям» ниже — пока что используется матовое системное размытие.</string>
 </resources>

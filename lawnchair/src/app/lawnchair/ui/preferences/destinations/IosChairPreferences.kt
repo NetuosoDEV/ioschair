@@ -33,7 +33,6 @@ import app.lawnchair.ui.preferences.components.WallpaperAccessPermissionDialog
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.ListPreference
 import app.lawnchair.ui.preferences.components.controls.ListPreferenceEntry
-import app.lawnchair.ui.preferences.components.controls.MainSwitchPreference
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.controls.WarningPreference
@@ -140,12 +139,16 @@ fun IosChairPreferences(
         }
 
         val glassEnabled = prefs.iosGlassEnabled.getAdapter()
-        MainSwitchPreference(
-            adapter = glassEnabled,
-            label = stringResource(R.string.ios_glass_enabled),
-            description = stringResource(R.string.ios_glass_enabled_desc),
-        ) {
+        run {
             PreferenceGroup(heading = stringResource(R.string.ios_group_glass)) {
+                SwitchPreference(
+                    adapter = glassEnabled,
+                    label = stringResource(R.string.ios_glass_enabled),
+                    description = stringResource(R.string.ios_glass_enabled_desc),
+                )
+                if (glassEnabled.state.value && !hasWallpaperAccess) {
+                    WarningPreference(stringResource(R.string.ios_liquid_needs_access))
+                }
                 ListPreference(
                     adapter = prefs.iosGlassSource.getAdapter(),
                     entries = listOf(

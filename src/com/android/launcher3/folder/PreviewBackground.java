@@ -298,6 +298,7 @@ public class PreviewBackground extends DelegatedCellDrawing {
             mGlass = new app.lawnchair.ioschair.glass.GlassPainter(mContext);
             mGlass.setTintBoost(0.08f);
             mGlass.setRefractionScale(0.45f);
+            mGlass.setShadow(false);
         }
         float x = getOffsetX();
         float y = getOffsetY();

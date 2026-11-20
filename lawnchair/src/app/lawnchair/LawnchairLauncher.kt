@@ -478,12 +478,10 @@ class LawnchairLauncher : QuickstepLauncher() {
         super.onResume()
         restartIfPending()
         // IOSChair: tilt-reactive glass highlights + refresh backdrop if permission changed.
-        if (app.lawnchair.ioschair.IosPrefs.glass(this)) {
-            if (app.lawnchair.ioschair.IosPrefs.get(this).iosGlassMotion.get()) {
-                app.lawnchair.ioschair.glass.GlassMotion.start(this)
-            }
-            app.lawnchair.ioschair.glass.GlassBackdrop.refreshIfAccessChanged(this)
+        if (app.lawnchair.ioschair.IosPrefs.get(this).iosGlassMotion.get()) {
+            app.lawnchair.ioschair.glass.GlassMotion.start(this)
         }
+        app.lawnchair.ioschair.glass.GlassBackdrop.refreshIfAccessChanged(this)
         app.lawnchair.ioschair.IosJiggle.attach(this)
         refreshPredictionContainersFromModel()
 

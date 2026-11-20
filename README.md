@@ -11,7 +11,7 @@ setting available for fine tuning.
 
 | Area | iOS 26 behaviour reproduced |
 | --- | --- |
-| **Liquid Glass material** | Real-time AGSL shader (Android 13+): blurred wallpaper backdrop, edge **lensing/refraction**, chromatic dispersion, vibrancy boost, adaptive light/dark tint and a **specular rim**. Android 8–12 get a composited fallback. |
+| **Glass material** | Frosted glass via real-time **system blur** (Android 12+, works with live wallpapers). **Liquid Glass** on top: ReGlass-based AGSL shader (Android 13+) with Snell refraction at the rim, RGB dispersion, Fresnel tint, directional glare and a soft shadow. |
 | **Motion glints** | The light source follows device tilt (gravity sensor), so highlights slide along glass edges like on iPhone. Only active while the home screen is visible. |
 | **Dock** | Floating glass dock with rounded corners, 4 icons, no labels, no search bar under it. Radius / margins / padding are adjustable. |
 | **Search pill** | The glass **“Search”** pill above the dock opens app search; while you swipe pages it morphs into page dots. |
@@ -58,4 +58,6 @@ Code map of the fork:
 
 Based on Lawnchair (GPL-3.0) and AOSP Launcher3 (Apache-2.0); see [`docs/LAWNCHAIR_README.md`](docs/LAWNCHAIR_README.md)
 and `LICENSE.txt`. Inter font © The Inter Project Authors, SIL Open Font License 1.1
-([`docs/licenses/Inter-OFL.txt`](docs/licenses/Inter-OFL.txt)).
+([`docs/licenses/Inter-OFL.txt`](docs/licenses/Inter-OFL.txt)). The Liquid Glass shader is an AGSL
+port of [ReGlass](https://github.com/RedxAx/ReGlass) optics © 2025 ReStudio By RedxAx, MIT License
+([`docs/licenses/ReGlass-MIT.txt`](docs/licenses/ReGlass-MIT.txt)).

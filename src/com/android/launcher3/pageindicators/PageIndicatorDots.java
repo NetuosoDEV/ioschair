@@ -200,6 +200,7 @@ public class PageIndicatorDots extends View implements Insettable, PageIndicator
             mIosPill = true;
             mShouldAutoHide = true;
             mPillGlass = new app.lawnchair.ioschair.glass.GlassPainter(getContext());
+            mPillGlass.setTrackHostAlpha(true);
             mPillTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mPillTextPaint.setTextSize(15 * getResources().getDisplayMetrics().scaledDensity);
             mPillTextPaint.setTypeface(android.graphics.Typeface.create(

@@ -267,6 +267,7 @@ public class Hotseat extends FrameLayout implements Insettable {
         if (app.lawnchair.ioschair.IosPrefs.dockGlass(getContext())) {
             mDockGlass = new app.lawnchair.ioschair.glass.GlassPainter(getContext());
             mDockGlass.setTintBoost(0.02f);
+            mDockGlass.setTrackHostAlpha(true);
             return;
         }
         if(!preferenceManager.getHotseatBG().get()) return;
